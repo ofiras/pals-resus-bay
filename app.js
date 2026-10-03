@@ -72,6 +72,8 @@ const DRUG_ICON = { epiim: 'drugPen', naloxone: 'drugSpray', abx: 'drugVial', de
 /* Syringe-label colours loosely after ISO 26825 drug classes. */
 const DRUG_COL = { epi: '#c39bff', epiim: '#c39bff', vaso: '#c39bff', atropine: '#5fd38d', adenosine: '#f2f2f2', amio: '#f2f2f2', procain: '#f2f2f2', lido: '#9aa7ad', naloxone: '#64a8ff', dextrose: '#ffe27a', mag: '#f2f2f2', abx: '#ffb46b', dexa: '#ffb46b', antihist: '#ffb46b' };
 const actIcon = a => ICA[a.id] || ICA[DRUG_ICON[a.id] || 'drugSyr'];
+ICA.history = sv('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>');
+ICA.labs = sv('<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 15h9"/>');
 /* Live controls on the drawn defibrillator: [action, x, y, w, h] in the device's 240x92 viewBox (padded for fingers). */
 const MON_HOT = [['pads', 143, 17, 34, 16], ['rhythm', 183, 13, 44, 16], ['sync', 183, 28, 44, 16], ['ecg12', 183, 43, 44, 16], ['shock', 192, 60, 26, 26], ['pace', 143, 69, 34, 15]];
 function cartHTML() {
@@ -178,8 +180,8 @@ const RX_RE = /\b(VF|pVT|VT|SVT|asystole|PEA|sinus|flat line|complex(es)?|P wave
 function hidesText(i, field) {
   const p = S.c.phases[i]; if (!p || S.lv < 2 || p.type === 'post') return false;
   if (field === 'say' && (p.type || 'act') === 'cycle') return true;
-  if (S.c.gen) return !!p[field === 'say' ? 'hs' : 'hm'];
-  const ce = D_EN.CASES.find(x => x.id === S.c.id), e = ce && ce.phases[i];
+  if (S.c.gen || p.tw) return !!p[field === 'say' ? 'hs' : 'hm'];
+  const e = p._e;
   return !!(e && typeof e[field] === 'string' && RX_RE.test(e[field]));
 }
 const sayOf = (p, i) => !hidesText(i, 'say') ? p.say : (p.type || 'act') === 'cycle' ? t('cycGeneric') : (S.st.monitor ? t('lookMon') : t('lookPt'));
@@ -742,7 +744,7 @@ function cases() {
   const LV = t('levels'), cl = curLevel();
   app.innerHTML = `<div class="shell">${secHead(t('casesTitle'), t('casesSub'))}
     <div class="lvsel" role="radiogroup" aria-label="${esc(t('lvLabel'))}">${LV.map((L, i) => { const l = i + 1, ok = lvUnlocked(l); return `<button class="lvbtn lv${l}${l === cl ? ' on' : ''}${ok ? '' : ' locked'}" role="radio" aria-checked="${l === cl}" data-level="${l}" ${ok ? '' : 'aria-disabled="true"'}><b>${ok ? '' : '\ud83d\udd12 '}${esc(L.n)}</b><small>${esc(ok ? L.d : L.req)}</small></button>`; }).join('')}</div>
-    <section class="group genset"><div class="genhd"><h3>${esc(t('genHead'))}</h3><span class="tgls"><label class="tgl"><input type="checkbox" id="real" ${Store.d.real !== false ? 'checked' : ''}><span>${esc(t('realLbl'))}</span></label><label class="tgl"><input type="checkbox" id="vary" ${Store.d.vary !== false ? 'checked' : ''}><span>${esc(t('varyLbl'))}</span></label><label class="tgl"><input type="checkbox" id="fatigue" ${Store.d.fatigue === true ? 'checked' : ''}><span>${esc(t('fatLbl'))}</span></label></span></div>
+    <section class="group genset"><div class="genhd"><h3>${esc(t('genHead'))}</h3><span class="tgls"><label class="tgl"><input type="checkbox" id="real" ${Store.d.real !== false ? 'checked' : ''}><span>${esc(t('realLbl'))}</span></label><label class="tgl"><input type="checkbox" id="vary" ${Store.d.vary !== false ? 'checked' : ''}><span>${esc(t('varyLbl'))}</span></label><label class="tgl"><input type="checkbox" id="fatigue" ${Store.d.fatigue === true ? 'checked' : ''}><span>${esc(t('fatLbl'))}</span></label><label class="tgl"><input type="checkbox" id="course" ${Store.d.course !== false ? 'checked' : ''}><span>${esc(t('courseLbl'))}</span></label></span></div>
       <p class="muted gensub">${esc(t('genSub'))}</p>
       <button class="casecard surprisecard" data-go="random"><div class="row"><span class="zone" style="--zc:var(--rr)">${IC.dice} ${esc(t('surprise'))}</span></div><h4>${esc(t('surpriseH'))}</h4><p>${esc(t('surpriseP'))}</p></button>
       <div class="cards">${['arrest', 'tachy', 'brady'].map(ty => `<button class="casecard gencard" data-go="gen" data-arg="${ty}"><div class="row"><span class="zone" style="--zc:var(--accent)">${IC.dice} ${esc(t('genAny'))}</span>${starsHTML(Store.d.best['gen-' + ty] || 0)}</div><h4>${esc(G.title[ty])}</h4><p>${esc(t('genDesc')[ty])}</p></button>`).join('')}</div></section>
@@ -756,6 +758,7 @@ function cases() {
       </button>`; }).join('')}</div></section>`).join('')}
   </div>`;
   $('#vary').addEventListener('change', e => { Store.d.vary = e.target.checked; Store.save(); });
+  $('#course').addEventListener('change', e => { Store.d.course = e.target.checked; Store.save(); toast(e.target.checked ? t('courseOn') : t('courseOff')); });
   $('#fatigue').addEventListener('change', e => { Store.d.fatigue = e.target.checked; Store.save(); toast(e.target.checked ? t('fatOn') : t('fatOff')); });
   $('#real').addEventListener('change', e => { Store.d.real = e.target.checked; Store.save(); toast(e.target.checked ? t('realOn') : t('realOff')); });
   $('.lvsel').addEventListener('click', e => { const b = e.target.closest('[data-level]'); if (!b) return; const l = +b.dataset.level; if (!lvUnlocked(l)) { toast(t('levels')[l - 1].req); return; } Store.d.level = l; Store.save(); go('cases'); });
@@ -862,6 +865,8 @@ function simScreen(arg) {
     const ei = c.phases.findIndex(p => p.type === 'end');
     c.phases.splice(ei < 0 ? c.phases.length : ei, 0, { type: 'post', k: t('postK'), say: t('postSay'), t: 90, need: [] });
   }
+  { const ce = !c.gen && D_EN.CASES.find(x => x.id === c.id); if (ce) c.phases.forEach((p, i) => { if (p.type !== 'post' && !p._e) p._e = ce.phases[i]; }); }
+  plotTwists(c, lv);
   const hideWt = lv >= 2 && ageY != null;
   const z = D.zoneFor(c.wt);
   app.innerHTML = `<div class="sim">
@@ -1049,7 +1054,109 @@ function ageYears(c) {
 /* Weight from age (APLS): infants months/2 + 4, 1-5 y 2 x age + 8, 6 y and older 3 x age + 7. */
 const estWt = y => y < 1 ? Math.round(y * 12) / 2 + 4 : y <= 5 ? 2 * Math.round(y) + 8 : 3 * Math.round(y) + 7;
 const roundWt = w => w < 10 ? Math.round(w * 2) / 2 : Math.round(w);
-const POST_IDS = ['crib', 'pitch', 'teen'];
+const POST_IDS = ['crib', 'pitch', 'teen', 'winter', 'storm', 'squeeze'];
+/* ---------------- unpredictable course, complications, wrap-up ---------------- */
+const DISPO = {'slow': 'picu', 'block': 'picu', 'apnea': 'picu', 'tube': 'picu', 'svt': 'ward', 'recess': 'picu', 'teen': 'picu', 'fever': 'home', 'peanut': 'ward', 'sepsis': 'picu', 'crash': 'picu', 'tummy': 'ward', 'heart': 'picu', 'dka': 'picu', 'bike': 'picu', 'pills': 'ward', 'croup': 'ward', 'wheeze': 'picu', 'lungs': 'picu', 'sugar': 'ward', 'head': 'picu'};
+const TREAT_IDS = ['o2', 'bvm', 'airway', 'vagal', 'adenosine', 'sync', 'shock', 'pace', 'cpr', 'epi', 'epiim', 'atropine', 'amio', 'lido', 'procain', 'naloxone', 'dextrose', 'mag', 'abx', 'dexa', 'antihist', 'fluid', 'vaso', 'albuterol', 'nebepi', 'needle'];
+const NO_COMP = ['tube', 'squeeze'];
+/* What the scripted case looks like just before each step (pulse, rhythm, what is in place), assuming every needed action is done. */
+function simPhases(c) {
+  const st = Object.assign({ pulse: true, cpr: false, rhythm: 'nsr' }, c.init), fl = Object.assign({}, c.flags), out = [];
+  c.phases.forEach(p => {
+    out.push({ pulse: st.pulse, cpr: st.cpr, rhythm: st.rhythm, io: !!fl.io, bvm: !!fl.bvm, tube: !!fl.tube });
+    if (p.set) Object.assign(st, p.set);
+    if (p.type === 'cycle' && (!p.set || p.set.cpr === undefined)) st.cpr = true;
+    (p.need || []).flat().forEach(a => { if (a === 'ivio') fl.io = true; if (a === 'bvm') fl.bvm = true; if (a === 'airway') fl.tube = true; if (a === 'cpr') st.cpr = true; if (a === 'rhythm') st.cpr = false; });
+    if (p.after) Object.assign(st, p.after);
+  });
+  return out;
+}
+const COMP = {
+  vomit: T => [{ tw: true, k: T.vomK, say: T.vomSay, cond: () => S.flags.bvm && !S.flags.tube, dip: 8, need: ['suction'], ok: ['position'], why: { airway: T.vomWhyTube }, msg: T.vomMsg, teach: T.vomTeach, t: 10 }],
+  io: T => [{ tw: true, k: T.ioK, say: T.ioSay, cond: () => S.flags.io, flag: { io: false }, need: ['ivio'], msg: T.ioMsg, teach: T.ioTeach, t: 14 }],
+  tube: T => [
+    { tw: true, k: T.tubeK, say: T.tubeSay, cond: () => S.flags.tube && (S.twTube = true), flag: { tube: false, bvm: false }, dip: 14, need: ['bvm'], why: { airway: T.tubeWhyAw }, msg: T.tubeMsg, teach: T.tubeTeach, t: 10 },
+    { tw: true, k: T.tubeK2, say: T.tubeSay2, cond: () => !!S.twTube, need: ['airway'], msg: T.tubeMsg2, t: 16 }]
+};
+const vitTxt = (s, W) => W.hV(s.hr || '--', s.spo2 || '--', s.bp || '--');
+function handoverOpts(p) {
+  const W = t('tw').wrap, c = S.c, st = S.st, did = [...(S.did || [])].filter(a => TREAT_IDS.includes(a)).slice(0, 7).map(a => actName(a));
+  const fake = actName(['amio', 'atropine', 'naloxone', 'adenosine', 'abx', 'dexa'].find(a => !(S.did || new Set()).has(a)) || 'lido');
+  const now = vitTxt(st, W); let old = vitTxt(c.init || {}, W);
+  if (old === now) old = vitTxt({ hr: (st.hr || 100) + 45, spo2: Math.max(70, (st.spo2 || 96) - 9), bp: st.bp }, W);
+  const line = (list, vit) => W.hLine(c.age, c.wt, list.length ? list.join(', ') : W.hNone, vit);
+  p.opts = [{ t: line(did, now), ok: true }, { t: line(did.concat(fake), now), why: W.hWhyDrug(fake) }, { t: line(did, old), why: W.hWhyOld }];
+}
+/* Rewrites the step list for this run: treatments that need repeating, one complication, and the wrap-up steps.
+   window.__twist = { all: true, comp: 'vomit' | 'io' | 'tube' } forces them (tests). */
+function plotTwists(c, lv) {
+  const T = t('tw'), F = window.__twist || {}, on = F.all || (Store.d.course !== false && lv >= 2), R = n => F.all || Math.random() < n;
+  const P = c.phases, flat = p => (p.need || []).flat(), mk = o => Object.assign({ tw: true, need: [] }, o);
+  if (on && !c.field && !c.gen) {
+    /* the arrest rhythm that will not give up: one or two more rounds before ROSC */
+    const sim = simPhases(c);
+    const r = P.findIndex((p, i) => i > 0 && p.set && p.set.cpr === false && p.after && p.after.pulse === true && flat(p).includes('check') && !sim[i].pulse && P[i - 1].type === 'cycle');
+    if (r > 0 && T.still[sim[r].rhythm]) {
+      const rh = sim[r].rhythm, shk = ['vf', 'vt', 'torsades'].includes(rh), n = F.all ? 2 : Math.random() < 0.45 ? 1 : Math.random() < 0.3 ? 2 : 0, add = [];
+      for (let k = 0; k < n; k++) {
+        add.push(mk({ k: T.chkK, say: T.chkSay, need: ['rhythm'], msg: T.still[rh], hm: true, t: 8 }));
+        add.push(shk ? mk({ k: T.shkK, say: T.still[rh], hs: true, need: ['shock'], why: { epi: T.shkWhyEpi, sync: '!' + T.shkWhySync }, msg: T.shkMsg, after: { cpr: true }, t: 12 })
+          : mk({ k: T.cprK, say: T.still[rh], hs: true, need: ['cpr'], why: { shock: '!' + T.nonWhyShock }, msg: T.cprMsg, t: 8 }));
+        add.push(mk({ type: 'cycle', k: T.cycK, say: T.cycSay, dur: 14, need: ['epi'], ok: ['airway', 'hts', 'ivio', 'bvm', 'glucose'], why: shk ? {} : { shock: '!' + T.nonWhyShock }, teach: T.cycTeach }));
+      }
+      P.splice(r, 0, ...add);
+    }
+    /* SVT that adenosine does not hold: the infant tires and needs cardioversion */
+    if (c.id === 'svt' && R(0.4)) {
+      const a = P.findIndex(p => flat(p).includes('adenosine') && p.after && p.after.rhythm);
+      if (a > 0) {
+        const o = P[a];
+        P[a] = Object.assign({}, o, { msg: T.svtFail, hm: false, tw: true, after: undefined });
+        const add = mk({ k: T.svtK, say: T.svtSay, set: { bp: '56/34', skin: 'mottled', look: T.svtLook, spo2: 91 }, need: ['sync'], ok: ['o2'], why: { adenosine: T.svtWhyAdeno, vagal: T.svtWhyAdeno, shock: '!' + T.svtWhyShock, amio: T.svtWhyAmio }, msg: T.svtMsg, after: Object.assign({}, o.after, { bp: '82/50', skin: 'pink', spo2: 98 }), teach: T.svtTeach, t: 16 });
+        if (P[a + 1] && P[a + 1].type === 'q') P.splice(a + 1, 1, add); else P.splice(a + 1, 0, add);
+      }
+    }
+    /* shock that needs one more bolus */
+    if (['sepsis', 'tummy'].includes(c.id) && R(0.5)) {
+      const b = P.findIndex(p => (p.type || 'act') === 'act' && flat(p).includes('fluid'));
+      if (b >= 0) P.splice(b + 1, 0, mk({ k: T.fluK, say: T.fluSay, need: ['fluid'], ok: ['glucose', 'abx', 'auscult'], why: { vaso: T.fluWhyVaso }, msg: T.fluMsg, teach: T.fluTeach, t: 16 }));
+    }
+    /* one complication in about half the runs */
+    if (!NO_COMP.includes(c.id) && R(0.5)) {
+      const s2 = simPhases(c), first = a => P.findIndex(p => flat(p).includes(a)), fb = first('bvm'), fi = first('ivio'), ft = first('airway'), cand = { vomit: [], io: [], tube: [] };
+      for (let j = 1; j < P.length; j++) {
+        const p = P[j], q = P[j - 1];
+        if (p.tw || q.tw || !['act', 'cycle'].includes(p.type || 'act') || p.set || q.type === 'q' || q.flash || flat(p).some(a => ['shock', 'sync', 'cpr', 'check', 'rhythm', 'adenosine'].includes(a))) continue;
+        if (fb >= 0 && j > fb && s2[j].bvm && !s2[j].tube) cand.vomit.push(j);
+        if (fi >= 0 && j > fi + 1 && s2[j].io) cand.io.push(j);
+        if (ft >= 0 && j > ft && s2[j].tube) cand.tube.push(j);
+      }
+      const kinds = Object.keys(cand).filter(k => cand[k].length && (!F.comp || F.comp === k));
+      if (kinds.length) { const k = pick(kinds), j = pick(cand[k]); P.splice(j, 0, ...COMP[k](T)); }
+    }
+  }
+  /* hospital cases that do not end in an arrest finish with a reassessment, a destination and a handover */
+  if (!c.field && !c.gen && DISPO[c.id] && !P.some(p => p.type === 'post')) {
+    const e = P.findIndex(p => p.type === 'end'), W = T.wrap, d = DISPO[c.id], X = (t('extra') || {})[c.id] || {};
+    P.splice(e < 0 ? P.length : e, 0,
+      mk({ k: W.reK, say: W.reSay, need: [['check', 'auscult', 'resp'], 'labs'], build: p => { const st = S.st; p.msg = W.reMsg({ hr: st.hr || '--', sp: st.spo2 || '--', bp: st.bp || '--', rr: st.rr || '--' }, X.labs); }, teach: W.reTeach, t: 20 }),
+      mk({ type: 'q', k: W.dK, say: W.dSay, q: W.dQ, opts: ['picu', 'ward', 'home'].map(k => k === d ? { t: W.d[k], ok: true } : { t: W.d[k], why: W.dWhy[d][k] }), teach: W.dTeach }),
+      mk({ type: 'q', k: W.hK, say: W.hSay, q: W.hQ, opts: [], build: handoverOpts, teach: W.hTeach }));
+  }
+}
+/* Blood gas and labs outside a step that asks for them: sent now, back in about half a minute. */
+function labsSend() {
+  const x = (t('extra') || {})[S.c.id] || {}, s0 = S, res = x.labs || t('labsNone');
+  if (S.labsBack) { S.fb = { t: 'note', h: t('labsH'), m: res }; renderSitu(); return; }
+  if (S.labsSent) { S.fb = { t: 'note', h: t('fbAlready'), m: t('labsWait') }; renderSitu(); return; }
+  S.labsSent = true; rec(actName('labs'), 'ok'); Sound.click(true);
+  S.fb = { t: 'note', h: t('fbFine'), m: t('labsSentM') }; renderSitu();
+  setTimeout(() => {
+    if (S !== s0 || S.finished) return;
+    S.labsBack = true; rec(`${t('labsH')}: ${res}`, 'ok'); toast(t('labsBackT'));
+    if (!S.busy && !S.modal) { S.fb = { t: 'note', h: t('labsH'), m: res }; renderSitu(); }
+  }, window.__fastEnd ? 800 : 25000);
+}
 function setTab(tab) {
   S.tab = tab;
   $$('#cart [data-tab]').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
@@ -1259,6 +1366,11 @@ function nextPhase() {
   S.i++;
   const p = S.c.phases[S.i];
   if (!p) { finish(); return; }
+  /* a complication only happens if the thing it is about is really in place */
+  if (p.cond && !p.cond()) { nextPhase(); return; }
+  if (p.build) p.build(p);
+  if (p.flag) { Object.assign(S.flags, p.flag); updAll(); }
+  if (p.dip && S.st.pulse && S.st.spo2) { if (S.wBase.spo2 == null) S.wBase.spo2 = S.st.spo2; S.worsening = true; applySt({ spo2: Math.max(60, S.st.spo2 - p.dip) }); S.worsening = false; }
   p.type = p.type || 'act'; p.need = p.need || [];
   S.p = p; S.done = new Set(); S.qWrong = new Set(); S.pT0 = performance.now(); S.busy = false;
   /* A ROSC step (organized rhythm, pulse comes back): compressions keep running until the learner pauses them for the
@@ -1283,7 +1395,7 @@ function nextPhase() {
   if (p.type === 'post') postInit();
   /* Things that stay in place (monitor, access, oxygen, bag, tube, running CPR) count for a later step automatically. */
   if (p.type === 'act' || p.type === 'cycle') {
-    const f = S.flags, have = { pads: f.pads || (f.leads && S.st.pulse), leads: f.leads || f.pads, ivio: f.io, o2: f.o2 || f.bvm || f.tube, bvm: f.bvm || f.tube, airway: f.tube, cpr: p.type === 'act' && S.st.cpr };
+    const f = S.flags, have = { labs: S.labsSent, pads: f.pads || (f.leads && S.st.pulse), leads: f.leads || f.pads, ivio: f.io, o2: f.o2 || f.bvm || f.tube, bvm: f.bvm || f.tube, airway: f.tube, cpr: p.type === 'act' && S.st.cpr };
     const auto = [];
     p.need.forEach((it, i) => { const a = (Array.isArray(it) ? it : [it]).find(x => have[x]); if (a) { S.done.add(i); auto.push(actName(a)); } });
     /* a scheduled epinephrine dose is already covered if the last one went in under 3 minutes ago */
@@ -1299,7 +1411,7 @@ function nextPhase() {
   dimCart(p.type === 'q');
   renderSitu();
 }
-function fbHTML(fb) { return `<div class="fb ${fb.t}"><b>${esc(fb.h)}</b><span>${esc(fb.m)}</span>${fb.teach ? `<span class="teach">${esc(fb.teach)}</span>` : ''}</div>`; }
+function fbHTML(fb) { return `<div class="fb ${fb.t}"><b>${esc(fb.h)}</b><span>${esc(fb.m)}</span>${fb.inf ? `<span class="inf" style="--d:${fb.infMs}ms">${esc(fb.inf)}<i></i></span>` : ''}${fb.teach ? `<span class="teach">${esc(fb.teach)}</span>` : ''}</div>`; }
 function renderSitu() {
   const p = S.p, el = $('#situ'); if (!p || !el) return;
   const dots = S.lv < 3 && (p.type === 'act' || p.type === 'cycle') && p.need.length ? `<div class="needs" aria-label="${esc(t('actionsDone', S.done.size, p.need.length))}">${p.need.map((_, i) => `<i class="${S.done.has(i) ? 'done' : ''}"></i>`).join('')}</div>` : '';
@@ -1533,7 +1645,7 @@ function die() {
 
 /* Resuscitation-quality metrics, in code time. A pause is time without compressions while pulseless after CPR has
    started; phases marked pauseOk (lone rescuer leaving to call) are excluded. */
-const phaseEN = () => { const ce = D_EN.CASES.find(x => x.id === S.c.id); return (ce && ce.phases[S.i]) || {}; };
+const phaseEN = () => (S.p && S.p._e) || {};
 function trackMetrics() {
   const st = S.st, m = S.m, dc = Math.max(0, S.codeT - m.prevT); m.prevT = S.codeT;
   if (st.monitor && !st.pulse) {
@@ -1608,7 +1720,9 @@ const GIVEN_IDS = new Set(['epi', 'epiim', 'atropine', 'adenosine', 'amio', 'lid
 function effects(id) {
   const f = S.flags;
   if (GIVEN_IDS.has(id)) S.given[id] = S.codeT;
+  (S.did = S.did || new Set()).add(id);
   switch (id) {
+    case 'labs': S.labsSent = S.labsBack = true; break;
     case 'o2': f.o2 = true; break;
     case 'bvm': f.bvm = true; f.o2 = true; break;
     case 'check': if (S.m.cpr0 === null) S.m.recog = S.codeT; break;
@@ -1640,6 +1754,10 @@ function doAction(id, ro) {
   if (!S || S.busy || !S.started || S.modal) return;
   const p = S.p; if (!p || p.type === 'q' || p.type === 'end') return;
   if (id === 'auscult') chestSound();
+  /* history and bloods can be asked for at any moment; a step that needs them judges them like any other action */
+  const wanted = p.type !== 'post' && p.need.some((it, i) => !S.done.has(i) && (it === id || (Array.isArray(it) && it.includes(id))));
+  if (id === 'history' && !wanted) { rec(actName(id), 'ok'); S.fb = { t: 'note', h: t('hxH'), m: ((t('extra') || {})[S.c.id] || {}).hx || t('hxNone') }; renderSitu(); return; }
+  if (id === 'labs' && !wanted && !S.c.field) { labsSend(); return; }
   if (p.type === 'post') { postAct(id); return; }
   if (S.roscHold === p && S.st.cpr) {
     if (id === 'cpr') { S.fb = { t: 'note', h: t('fbAlready'), m: t('roscRunning') }; renderSitu(); return; }
@@ -1782,6 +1900,16 @@ function phaseDone() {
   S.fb = { t: 'ok', h: t('correct'), m: msgOf(p, S.i), teach: S.lv >= 3 ? null : p.teach };
   if (p.teach) S.teach.push({ k: p.k, t: p.teach });
   dimCart(true);
+  /* treatments take time: a bolus runs for a while (the numbers move as it goes in), a drug needs a moment to act */
+  const pn = pneeds(p), inf = !p.flash && S.st.pulse ? (pn.includes('fluid') ? [t('infFluid'), 5000, true] : pn.some(a => GIVEN_IDS.has(a) && a !== 'needle') ? [t('infDrug'), 2500, false] : null) : null;
+  if (inf) {
+    const ms = window.__fastEnd ? 300 : inf[1];
+    S.fb.inf = inf[0]; S.fb.infMs = ms;
+    if (inf[2] && p.after) applySt(p.after);
+    renderSitu();
+    setTimeout(() => { if (!S || S.p !== p) return; if (!inf[2] && p.after) applySt(p.after); nextPhase(); }, ms);
+    return;
+  }
   if (p.flash) {
     const prev = { rhythm: S.st.rhythm, hr: S.st.hr };
     applySt({ rhythm: p.flash.rhythm }); renderSitu();

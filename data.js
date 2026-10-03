@@ -32,6 +32,7 @@ window.PALS = (() => {
     { id: 'auscult', g: 'bed', n: 'Examine chest', s: 'Look, listen, feel' },
     { id: 'vagal', g: 'bed', n: 'Vagal maneuver', s: 'Ice to face \u00b7 Valsalva' },
     { id: 'hts', g: 'bed', n: "Hunt H's & T's", s: 'Reversible causes' },
+    { id: 'history', g: 'bed', n: 'Ask for the history', s: 'Parent \u00b7 bystander \u00b7 nurse' },
     { id: 'leads', g: 'mon', n: 'Monitor leads + SpO\u2082', s: 'ECG \u00b7 pulse ox \u00b7 BP cuff' },
     { id: 'pads', g: 'mon', n: 'Defibrillator pads', s: 'Monitor + shock \u00b7 AED' },
     { id: 'rhythm', g: 'mon', n: 'Analyze rhythm', s: 'Pause CPR < 10 s' },
@@ -56,6 +57,7 @@ window.PALS = (() => {
     { id: 'fluid', g: 'line', n: 'Fluid bolus', s: 'Isotonic crystalloid' },
     { id: 'vaso', g: 'line', n: 'Vasoactive infusion', s: 'Epi / norepi drip' },
     { id: 'glucose', g: 'line', n: 'Check glucose', s: 'Point of care' },
+    { id: 'labs', g: 'line', n: 'Blood gas & labs', s: 'Results in about a minute' },
     { id: 'o2', g: 'air', n: 'Oxygen', s: 'High-flow / blow-by' },
     { id: 'suction', g: 'air', n: 'Suction', s: 'Max 10 s per pass' },
     { id: 'airway', g: 'air', n: 'Advanced airway', s: 'ETT / SGA + capno' },
@@ -78,6 +80,7 @@ window.PALS = (() => {
   const OK_TEXT = {
     resp: 'Responsiveness checked.', shout: 'You shout for help.', ems: 'Emergency response activated.',
     check: 'Pulse and breathing checked.', rhythm: 'Hands off. Rhythm analyzed.', ecg12: '12-lead recorded.', leads: 'ECG leads, pulse oximeter and BP cuff on. The monitor is reading.',
+    history: 'History taken.', labs: 'Blood gas and labs sent.',
     auscult: 'Chest examined.', glucose: 'Glucose checked.', hts: 'Reversible causes reviewed.',
     position: 'Airway opened.', suction: 'Airway suctioned.', o2: 'Oxygen on.', bvm: 'Bag-mask ventilation with 100% O2.',
     airway: 'Advanced airway placed, capnography on.', albuterol: 'Albuterol nebulizer running.', nebepi: 'Nebulized epinephrine running.',
@@ -1063,6 +1066,101 @@ window.PALS = (() => {
         ], teach: 'Impending herniation: head up 30\u00b0, hyperosmolar therapy (3% saline or mannitol), brief mild hyperventilation only as a bridge, neurosurgery.' },
         { k: 'Access', say: 'Hyperosmolar therapy needs access.', need: ['ivio'], ok: ['glucose'], msg: 'IV in. Hypertonic saline running. Neurosurgery is on the way.', after: { rhythm: 'nsr', hr: 84, bp: '118/70', rr: 18 }, t: 14 },
         { type: 'end', say: 'The CT shows an epidural hematoma. She goes straight to theatre and wakes up the next day.' }
+      ]
+    },
+    {
+      id: 'winter', title: 'Winter Night', group: 'Long cases', algo: 'brady', age: '3-month-old', wt: 5, kind: 'infant', diff: 3,
+      place: 'Emergency department \u00b7 night shift',
+      brief: 'A 3-month-old born at 34 weeks has had a cold for three days. Tonight he is breathing fast, grunting, and has taken half his usual feeds.',
+      init: { monitor: false, rhythm: 'stach', hr: 178, pulse: true, spo2: 86, rr: 72, bp: '78/46', skin: 'pale', look: 'Grunting \u00b7 nasal flaring \u00b7 retractions' },
+      phases: [
+        { type: 'q', k: 'First look', say: 'Grunting with every breath, deep retractions, pale. He looks at you but does not cry.', q: 'What does your first look tell you?', opts: [
+          { t: 'Severe respiratory distress, close to failure: act now', ok: true },
+          { t: 'Mild distress: observe him and offer a feed', why: 'Grunting, deep retractions and poor feeding in a young infant are severe distress. He needs treatment now.' },
+          { t: 'Cardiac arrest: start chest compressions', why: 'He is breathing, moving and has a pulse. Support his breathing first.' }
+        ], teach: 'Grunting is an infant keeping his small airways open. With retractions and poor feeding it means severe distress.' },
+        { k: 'Airway and oxygen', say: 'His nose is blocked with thick secretions.', need: ['suction', 'o2'], ok: ['pads', 'position', 'history'], why: { bvm: 'He is still breathing for himself. Clear the nose and give oxygen first.', airway: 'Not yet: clear the nose and give oxygen first.' }, msg: 'Thick secretions cleared from the nose. Oxygen on.', after: { spo2: 91 }, teach: 'Young infants breathe through the nose: suction and oxygen are the first treatment of bronchiolitis.', t: 14 },
+        { k: 'Monitor', say: 'A little pinker on oxygen.', need: ['pads'], ok: ['ivio', 'auscult', 'history'], msg: 'Monitor on: sinus tachycardia at 178.', t: 12 },
+        { k: 'Examine', say: 'Look at the monitor, then at the chest.', need: ['auscult'], ok: ['ivio', 'history', 'glucose'], msg: 'Fine crackles and wheeze on both sides, long expiration. The liver is not enlarged.', teach: 'Wheeze, crackles and a long expiration point to the lower airways.', t: 12 },
+        { k: 'Story and gas', say: 'Ask the mother what happened, and send a blood gas.', need: ['history', 'labs'], ok: ['ivio', 'glucose'], msg: 'Born at 34 weeks. Three days of a cold, half his feeds today. Gas: pH 7.22, pCO\u2082 68.', teach: 'A rising pCO\u2082 in a tachypneic infant means he is tiring. Prematurity and age under 3 months are the risk factors for apnea in bronchiolitis.', t: 18 },
+        { k: 'Ventilate', say: 'Twenty minutes later the grunting stops. He is quiet, with long pauses between breaths.', set: { rr: 10, spo2: 74, hr: 96, rhythm: 'sbrady', skin: 'cyan', look: 'Limp \u00b7 breathing pauses \u00b7 lips blue' }, need: ['bvm'], ok: ['position', 'suction', 'ivio'], why: { cpr: 'He has a pulse above 60. Ventilate with oxygen first; CPR if the rate stays under 60 with poor perfusion despite that.', epi: 'Hypoxia is driving the slow pulse. Ventilate first.', atropine: 'Hypoxia is driving the slow pulse. Ventilate first.', airway: 'Bag him first: it is faster, and he needs oxygen now.' }, msg: 'Bag-mask with 100% oxygen. The chest rises.', teach: 'A quiet child after a period of distress is an exhausted child. Bradycardia in an infant is hypoxia until proven otherwise.', t: 12 },
+        { type: 'q', k: 'Still slow', say: 'After 30 seconds of good ventilation he is mottled, CRT 5 s. Look at the monitor.', set: { hr: 54, spo2: 80, bp: '52/30', skin: 'mottled', look: 'Limp \u00b7 unresponsive \u00b7 mottled' }, q: 'Next step?', opts: [
+          { t: 'Start CPR: compressions with ventilation', ok: true },
+          { t: 'Keep bagging for two more minutes, then reassess', why: 'A rate under 60 with poor perfusion despite effective ventilation needs compressions now.' },
+          { t: 'Give atropine first, and compress if it fails', why: 'Compressions come first. Epinephrine is the first drug; atropine is for vagal tone or a primary AV block.' }
+        ], teach: 'HR under 60/min with poor perfusion despite oxygen and ventilation: start CPR.', after: { cpr: true } },
+        { type: 'cycle', k: 'CPR + epinephrine', say: 'CPR with ventilation. Get access and give the first drug.', dur: 14, need: ['ivio', 'epi'], ok: ['glucose'], why: { atropine: 'Epinephrine is first-line for bradycardia with poor perfusion.', adenosine: '!Adenosine slows conduction: the opposite of what he needs.' }, teach: 'Epinephrine 0.01 mg/kg IV/IO, repeat every 3\u20135 minutes.' },
+        { k: 'Check', say: 'Two minutes are up. Pause and check.', set: { cpr: false, rhythm: 'pea', hr: 40 }, need: ['check'], why: { shock: '!Organized complexes are never shocked. Check for a pulse.' }, msg: 'Slow wide complexes at 40. No brachial pulse.', after: { pulse: false, rr: 0, alarm: true, skin: 'grey', look: 'Unresponsive \u00b7 no pulse' }, t: 10 },
+        { type: 'q', k: 'Rhythm', say: 'Organized complexes at 40. No pulse.', q: 'This is\u2026', opts: [
+          { t: 'PEA: CPR and epinephrine, look for the cause', ok: true },
+          { t: 'Bradycardia with a pulse: give atropine', why: 'There is no pulse: this is cardiac arrest. Organized activity without a pulse is PEA.' },
+          { t: 'A shockable rhythm: defibrillate at 2 J/kg', why: 'Organized complexes without a pulse are PEA, which is not shockable.' }
+        ], teach: 'Untreated hypoxic bradycardia ends in PEA or asystole. Non-shockable: CPR, epinephrine, reversible causes.', after: { cpr: true } },
+        { type: 'cycle', k: 'Airway + cause', say: 'CPR resumes. Secure the airway, and work out why he arrested.', dur: 20, need: ['airway', 'hts'], ok: ['epi', 'fluid', 'glucose'], hts: { clue: 'A premature infant with bronchiolitis who tired, then stopped breathing before his heart slowed. Blood gas pCO\u2082 68.', ans: 'Hypoxia', fix: 'Secure the airway and ventilate with 100% oxygen.' }, why: { shock: '!PEA is not shockable.' }, teach: 'In children hypoxia is the most common reversible cause. An advanced airway lets you ventilate without pausing compressions.' },
+        { type: 'cycle', k: 'Epinephrine', say: 'Next cycle. Watch the epinephrine timer.', dur: 14, need: ['epi'], ok: ['glucose', 'fluid'], why: { shock: '!PEA is not shockable.', atropine: 'Atropine is not part of the arrest algorithm.' }, teach: 'Repeat epinephrine every 3\u20135 minutes, about every other cycle.' },
+        { k: 'ROSC?', say: 'Rhythm check: narrow complexes at 150. Look at the capnography.', set: { cpr: false, rhythm: 'stach', hr: 150, etco2: 38 }, need: ['check'], why: { cpr: 'Organized rhythm and a jump in EtCO\u2082: check for a pulse first.', shock: '!Organized rhythm: never shock it. Check for a pulse.' }, msg: 'Brachial pulse present.', after: { pulse: true, alarm: false, bp: '62/36', spo2: 91, skin: 'pale', look: 'ROSC \u00b7 sedated \u00b7 ventilated' }, teach: 'A sudden rise in EtCO\u2082 is often the first sign of ROSC.', t: 10 },
+        { type: 'end', say: 'He goes to the PICU on a ventilator. Five days later he is breathing on his own and feeding again.' }
+      ]
+    },
+    {
+      id: 'storm', title: 'After the Flu', group: 'Long cases', algo: 'tachy', age: '14-year-old', wt: 50, kind: 'teen', diff: 3,
+      place: 'Emergency department',
+      brief: 'A 14-year-old who had a flu-like illness last week walks in with chest pain and a racing heart. On the way from triage she turns pale and confused.',
+      init: { monitor: false, rhythm: 'vt', hr: 210, pulse: true, spo2: 93, rr: 30, bp: '74/48', skin: 'pale', look: 'Confused \u00b7 sweaty \u00b7 CRT 4 s' },
+      phases: [
+        { k: 'Basics', say: 'Pale, sweaty and confused. Her pulse is fast and weak.', need: ['o2', 'pads'], ok: ['ivio', 'ecg12', 'history'], why: { adenosine: 'Monitor first: identify the rhythm before giving any drug.', sync: 'Pads first: you cannot cardiovert without them, and you need to see the rhythm.', vagal: 'Monitor first: identify the rhythm before treating it.' }, msg: 'Oxygen on. Monitor on: a wide-complex tachycardia at 210.', t: 14 },
+        { type: 'q', k: 'Rhythm', say: 'Wide QRS, regular, rate 210, no P waves.', q: 'Rhythm?', opts: [
+          { t: 'Ventricular tachycardia with a pulse', ok: true },
+          { t: 'Supraventricular tachycardia (SVT)', why: 'SVT usually has a narrow QRS. A wide, regular tachycardia in a sick child is VT until proven otherwise.' },
+          { t: 'Sinus tachycardia from pain and fever', why: 'Sinus tachycardia has P waves, a narrow QRS and a rate that varies, and in a teenager it rarely exceeds 180.' }
+        ], teach: 'Wide QRS (over 0.09 s) and regular: treat as VT.' },
+        { type: 'q', k: 'Stable?', say: 'Confused, CRT 4 s. Look at the blood pressure.', q: 'What does she need?', opts: [
+          { t: 'Unstable: synchronized cardioversion now', ok: true },
+          { t: 'Stable: adenosine and an expert consult', why: 'Hypotension and confusion mean compromise. An unstable tachycardia with a pulse needs synchronized cardioversion.' },
+          { t: 'Pulseless: unsynchronized defibrillation', why: 'She has a pulse. An unsynchronized shock can turn VT into VF: synchronize.' }
+        ], teach: 'Compromise = hypotension, acutely altered mental status, or signs of shock.' },
+        { k: 'Cardiovert', say: 'Unstable VT with a pulse.', need: ['sync'], ok: ['ivio'], why: { shock: '!She has a pulse: synchronize the shock.', adenosine: 'She is unstable: do not delay cardioversion for a drug.', amio: 'She is unstable: electricity first.', procain: 'She is unstable: electricity first.' }, msg: 'Synchronized shock\u2026 sinus tachycardia at 130.', after: { rhythm: 'stach', hr: 130, bp: '88/54', look: 'Drowsy \u00b7 CRT 3 s' }, teach: 'Synchronized cardioversion 0.5\u20131 J/kg, then 2 J/kg. Sedate first only if it causes no delay.', t: 16 },
+        { k: 'Access, story, bloods', say: 'Sinus rhythm for now. Get access, the story and bloods.', need: ['ivio', 'history', 'labs'], ok: ['ecg12', 'glucose'], why: { fluid: 'Find out why first: a failing heart does not tolerate a large bolus.' }, msg: 'IV in. A week of fever and muscle aches, breathless on the stairs since yesterday, no medicines or drugs. Troponin very high, K 4.1, lactate 4.8.', teach: 'A viral illness, then chest pain, breathlessness and a ventricular arrhythmia: think myocarditis.', t: 20 },
+        { type: 'q', k: 'Circulation', say: 'BP 88/54, CRT 3 s. Her liver edge is 3 cm down and there are crackles at both bases.', q: 'How do you support her circulation?', opts: [
+          { t: 'A small bolus of 5\u201310 mL/kg slowly, then reassess; early inotrope', ok: true },
+          { t: 'Boluses of 20 mL/kg pushed fast, up to three', why: 'A big liver and crackles mean a failing pump. Large fast boluses will flood her lungs.' },
+          { t: 'Nothing for now: the rhythm is fixed', why: 'She is still poorly perfused, and the heart muscle is inflamed. She needs careful support and a cardiology and PICU team.' }
+        ], teach: 'Cardiogenic shock: small boluses of 5\u201310 mL/kg over 10\u201320 minutes, stop if crackles or the liver get worse, early inotrope and expert help.' },
+        { k: 'Collapse', say: 'While you are on the phone to cardiology she slumps. The monitor alarms.', set: { rhythm: 'vf', hr: 0, pulse: false, rr: 0, skin: 'grey', look: 'Unresponsive \u00b7 not breathing', alarm: true }, need: ['cpr'], ok: ['check', 'resp', 'shout'], why: { shock: 'Start compressions while the defibrillator charges; the shock comes next.', sync: '!There are no R waves to synchronize to, and no pulse.', epi: 'Compressions and a shock come before any drug.' }, msg: 'Compressions started. The defibrillator is charging.', teach: 'Unresponsive with VF on the monitor: CPR at once and a shock as soon as the defibrillator is ready.', t: 8 },
+        { k: 'Shock 1', say: 'Chaotic waves on the monitor. Charged.', need: ['shock'], why: { sync: '!VF has no R waves to sync to. Defibrillate unsynchronized.', epi: 'Shock first. In VF, epinephrine comes after the 2nd shock.' }, msg: 'Shock delivered. CPR resumes immediately.', after: { cpr: true }, teach: 'First shock: 2 J/kg.', t: 12 },
+        { type: 'cycle', k: 'CPR + ventilation', say: 'CPR for 2 minutes. Someone has to breathe for her.', dur: 12, need: ['bvm'], why: { epi: 'In VF, epinephrine comes after the 2nd shock.', amio: 'Amiodarone comes after the 3rd shock.', shock: 'Shocks happen at rhythm checks, every 2 minutes.' }, teach: 'Shockable pathway: shock, then 2 minutes of CPR with ventilation.' },
+        { k: 'Check 2', say: '2 minutes are up.', need: ['rhythm'], why: { shock: 'Analyze first: pause, read the rhythm, then shock.' }, msg: 'Still VF.', t: 8 },
+        { k: 'Shock 2', say: 'Still VF.', need: ['shock'], msg: 'Shock delivered. CPR resumes immediately.', after: { cpr: true }, teach: 'Second shock: 4 J/kg.', t: 12 },
+        { type: 'cycle', k: 'Epinephrine', say: 'CPR for 2 minutes.', dur: 14, need: ['epi'], ok: ['airway'], why: { amio: 'Amiodarone comes after the 3rd shock. Now: epinephrine.', lido: 'Lidocaine, like amiodarone, comes after the 3rd shock. Now: epinephrine.' }, teach: 'After the 2nd shock: epinephrine 0.01 mg/kg every 3\u20135 minutes; consider an advanced airway.' },
+        { k: 'Check 3', say: 'Rhythm check.', need: ['rhythm'], why: { shock: 'Analyze first: pause, read the rhythm, then shock.' }, msg: 'VF persists.', t: 8 },
+        { k: 'Shock 3', say: 'Still VF.', need: ['shock'], msg: 'Shock delivered. CPR resumes.', after: { cpr: true }, teach: 'Subsequent shocks: at least 4 J/kg, maximum 10 J/kg or the adult dose.', t: 12 },
+        { type: 'cycle', k: 'Antiarrhythmic', say: 'CPR for 2 minutes. Give the antiarrhythmic.', dur: 16, need: [['amio', 'lido']], dose: { amio: 'amioArrest' }, ok: ['epi', 'airway'], teach: 'After the 3rd shock: amiodarone 5 mg/kg bolus (or lidocaine 1 mg/kg). In myocarditis that does not respond, call the ECMO team early.' },
+        { k: 'ROSC?', say: 'Rhythm check: organized narrow complexes at 124.', set: { cpr: false, rhythm: 'stach', hr: 124, alarm: false }, need: ['check'], why: { shock: '!Organized rhythm: check for a pulse. Never shock it.', cpr: 'Organized rhythm: check for a pulse first, no more than 10 s.' }, msg: 'Carotid pulse present.', after: { pulse: true, bp: '80/50', spo2: 93, skin: 'pale', look: 'ROSC \u00b7 unresponsive' }, t: 10 },
+        { type: 'end', say: 'She goes to the PICU on an epinephrine infusion, with the ECMO team standing by. Myocarditis is confirmed the next day.' }
+      ]
+    },
+    {
+      id: 'squeeze', title: 'Tight Chest', group: 'Long cases', algo: 'resp', age: '8-year-old', wt: 26, kind: 'child', diff: 3,
+      place: 'Emergency department',
+      brief: 'An 8-year-old with asthma has been getting worse since last night. His inhaler no longer helps and he can only speak in single words.',
+      init: { monitor: false, rhythm: 'stach', hr: 160, pulse: true, spo2: 84, rr: 44, bp: '104/62', skin: 'pale', look: 'Tripod position \u00b7 single words \u00b7 loud wheeze' },
+      phases: [
+        { k: 'First treatment', say: 'Sitting forward, pulling at every breath, wheeze you can hear from the door.', need: ['o2', 'albuterol'], ok: ['pads', 'history', 'auscult'], why: { bvm: 'He is breathing for himself. Oxygen and a bronchodilator first.', airway: 'Intubating an asthmatic is a last resort. Oxygen and a bronchodilator first.', nebepi: 'Nebulized epinephrine is for upper airway swelling. His problem is in the lower airways.' }, msg: 'Oxygen on, back-to-back nebulizers running.', after: { spo2: 89 }, teach: 'Severe asthma: oxygen and back-to-back salbutamol (with ipratropium).', t: 14 },
+        { k: 'Monitor + access', say: 'The nebulizer is running.', need: ['pads', 'ivio'], ok: ['history', 'auscult'], msg: 'Monitor on, IV in.', t: 14 },
+        { k: 'Second line', say: 'Still working hard after the first nebulizers. What goes in through the IV?', need: ['dexa', 'mag'], ok: ['albuterol', 'history'], why: { abx: 'Nothing points to infection.', antihist: 'Antihistamines do not treat asthma.', fluid: 'He is not in shock. Treat the airways.' }, msg: 'Steroid in. Magnesium running over 20 minutes.', teach: 'Early steroid in every severe attack. Magnesium sulfate 25\u201350 mg/kg IV over 15\u201330 minutes when the first nebulizers are not enough.', t: 18 },
+        { k: 'Story and gas', say: 'Ask his father for the story, and send a blood gas.', need: ['history', 'labs'], ok: ['albuterol', 'auscult'], msg: 'Known asthma, two PICU admissions, ran out of his preventer inhaler a week ago. No allergies. Gas: pH 7.28, pCO\u2082 52.', teach: 'A fast-breathing asthmatic should have a low pCO\u2082. A normal or high value means he is tiring.', t: 18 },
+        { type: 'q', k: 'Quiet chest', say: 'Thirty minutes later he is drowsy. The wheeze has almost gone and he breathes 18 times a minute.', set: { rr: 18, spo2: 80, hr: 150, skin: 'cyan', look: 'Drowsy \u00b7 almost silent chest' }, q: 'What does the quiet chest mean?', opts: [
+          { t: 'Almost no air is moving: respiratory failure', ok: true },
+          { t: 'The treatment is working: continue the nebulizers', why: 'A child who improves becomes more alert and pinker. Drowsy, blue and quiet means almost no air is moving.' },
+          { t: 'He is exhausted and asleep: let him rest', why: 'Drowsiness with falling saturation is hypoxia and a rising CO\u2082, not sleep.' }
+        ], teach: 'The silent chest is the most dangerous sign in asthma.' },
+        { k: 'Take over', say: 'Respiratory failure.', need: ['bvm'], ok: ['epiim', 'albuterol'], why: { cpr: 'He has a pulse. Breathe for him.', airway: 'Bag him first while the team prepares the tube and drugs.' }, msg: 'Slow bagging with a long time to breathe out.', after: { spo2: 86 }, teach: 'Bag an asthmatic slowly: a low rate and a long expiration, or air gets trapped.', t: 12 },
+        { k: 'Intubate', say: 'He is not improving with the bag. The team is ready.', need: ['airway'], ok: ['fluid'], msg: 'Intubated with a cuffed tube. The capnography trace slopes up like a shark fin.', after: { spo2: 93, rr: 16, hr: 146, skin: 'pale', look: 'Intubated \u00b7 sedated' }, teach: 'After intubation: slow rate, long expiratory time, accept a high CO\u2082.', t: 16 },
+        { k: 'Sudden drop', say: 'Five minutes later the saturation falls, the bag becomes very stiff and the heart rate drops.', set: { spo2: 70, hr: 70, rhythm: 'sbrady', bp: '60/30', skin: 'grey', look: 'Intubated \u00b7 neck veins distended' }, need: ['auscult'], ok: ['suction'], why: { needle: 'Examine first: it takes seconds and tells you which side.', epi: 'Find out why first. The exam takes ten seconds.', fluid: 'Find out why first. The exam takes ten seconds.', atropine: 'This is not a vagal problem. Examine the chest.' }, msg: 'The tube is at the same depth and clear to suction. No breath sounds on the left, trachea pushed to the right.', teach: 'A ventilated child who suddenly gets worse: DOPE. Displaced tube, Obstructed tube, Pneumothorax, Equipment failure.', t: 12 },
+        { k: 'Pulse gone', say: 'Before you reach for the needle the complexes slow, and the pulse is gone.', set: { hr: 44, rhythm: 'pea', pulse: false, rr: 0, alarm: true, look: 'Unresponsive \u00b7 no pulse' }, need: ['cpr'], ok: ['check'], why: { shock: '!PEA is not shockable.', needle: 'Start compressions now; the needle goes in during this cycle.' }, msg: 'Compressions started.', teach: 'No pulse: compressions first, then treat the cause within the cycle.', t: 8 },
+        { type: 'cycle', k: 'Treat the cause', say: 'CPR is running. Give the first drug, name the cause and treat it.', dur: 22, need: ['epi', 'hts', 'needle'], ok: ['fluid'], hts: { clue: 'Severe asthma, just intubated and ventilated with positive pressure. No breath sounds on the left, trachea pushed to the right, distended neck veins.', ans: 'Tension pneumothorax', fix: 'Needle decompression, then a chest drain.' }, why: { shock: '!PEA is not shockable.', atropine: 'Atropine is not part of the arrest algorithm.' }, teach: 'Tension pneumothorax: needle decompression in the 2nd intercostal space, midclavicular line (or the 4th\u20135th space, anterior axillary line), then a chest drain.' },
+        { k: 'ROSC?', say: 'Rhythm check: narrow complexes at 140. Look at the capnography.', set: { cpr: false, rhythm: 'stach', hr: 140, etco2: 44 }, need: ['check'], why: { cpr: 'Organized rhythm and a jump in EtCO\u2082: check for a pulse first.', shock: '!Organized rhythm: never shock it. Check for a pulse.' }, msg: 'Carotid pulse present. Air hissed out through the needle.', after: { pulse: true, alarm: false, bp: '86/50', spo2: 92, skin: 'pale', look: 'ROSC \u00b7 intubated \u00b7 sedated' }, teach: 'Treating the cause is what brings the pulse back in PEA.', t: 10 },
+        { type: 'end', say: 'A chest drain goes in and he is transferred to the PICU. He is extubated two days later.' }
       ]
     }
   ];

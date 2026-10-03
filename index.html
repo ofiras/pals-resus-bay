@@ -447,6 +447,10 @@ p{margin:0}
 .pt.has-bag .bagbody{animation:squeeze 2.6s ease-in-out infinite}
 @keyframes squeeze{0%,55%,100%{transform:scale(1)}18%{transform:scale(1,.62)}}
 .pt.has-tube .mask{display:none!important}
+.fb .inf{display:block;margin-top:6px;font-family:var(--mono);font-size:12px;opacity:.9}
+.fb .inf i{display:block;height:4px;margin-top:4px;border-radius:2px;background:currentColor;transform-origin:left;animation:infrun var(--d,3s) linear both}
+[dir=rtl] .fb .inf i{transform-origin:right}
+@keyframes infrun{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .pt .eyeO,.pt .retr{display:none}
 .pt.eyes-open .eyeO,.pt.eyes-half .eyeO{display:block}
 .pt.eyes-open .eyeC,.pt.eyes-half .eyeC{display:none}
