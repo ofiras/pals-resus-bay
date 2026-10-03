@@ -937,7 +937,7 @@ function simScreen(arg) {
   $('#wBP').addEventListener('click', nbpGo);
   $('#wBP').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nbpGo(); } });
   $('#mSil').addEventListener('click', () => { if (!S) return; S.silUntil = performance.now() + 120000; Sound.click(true); updVitals(); });
-  MON = new Monitor($('#cv'), { sweep: 3.5, full: true, onBeat: k => { if (!S) return; const sp = S.dv.spo2; if (sp) { if (k === 'pleth') Sound.pulseTone(sp); } else if (k === 'qrs') Sound.qrs(); } });
+  MON = new Monitor($('#cv'), { sweep: 3.5, full: true, onBeat: k => { if (!S || S.finished) return; const sp = S.dv.spo2; if (sp) { if (k === 'pleth') Sound.pulseTone(sp); } else if (k === 'qrs') Sound.qrs(); } });
   MON.set(monState()); tlTrack();
   setTab('mon'); updAll(); updScore();
   $('#situ').innerHTML = `<p class="say muted">${esc(t('readFile'))}</p>`;
