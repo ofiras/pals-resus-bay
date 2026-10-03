@@ -451,6 +451,17 @@ p{margin:0}
 .fb .inf i{display:block;height:4px;margin-top:4px;border-radius:2px;background:currentColor;transform-origin:left;animation:infrun var(--d,3s) linear both}
 [dir=rtl] .fb .inf i{transform-origin:right}
 @keyframes infrun{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.iconbtn[data-tut]{font:800 18px var(--display)}
+.tut h2{margin:.2em 0 .5em}
+.tut p{margin:.45em 0;line-height:1.5}
+.tut .tutvis{display:flex;justify-content:center;margin:6px 0 10px}
+.tut .tutvis .pt{width:120px}
+.tut .tutvis.cart{pointer-events:none}
+.tut .tutlist,.tut .tutdl dd{font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--fg);opacity:.9;margin:0 0 .5em}
+.tut .tutlist{padding:8px 10px;border:1px solid #1d3a47;border-radius:10px}
+.tut .tutdl{margin:.6em 0;padding:8px 10px;border:1px solid #1d3a47;border-radius:10px}
+.tut .tutdl dt{font-weight:800;color:var(--accent);margin-top:.4em}
+.tut .tutdl dt:first-child{margin-top:0}
 .pt .eyeO,.pt .retr{display:none}
 .pt.eyes-open .eyeO,.pt.eyes-half .eyeO{display:block}
 .pt.eyes-open .eyeC,.pt.eyes-half .eyeC{display:none}
@@ -1069,6 +1080,20 @@ svg.tl .tlbt{font-size:9px}svg.tl .tlbt.ok{fill:var(--good)}svg.tl .tlbt.bad{fil
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+/* Phones held upright: the defibrillator is the whole width of the cart so its keys can be pressed; the pole and the
+   oxygen cylinder are dropped (drawers 2 and 3 open the same things). Bigger keys in the defibrillator and pacer dialogs. */
+@media (max-width: 640px) and (orientation: portrait){
+  #cart .cartviz{max-width:none}
+  #cart .cartbody{grid-template-columns:minmax(0,1fr)}
+  #cart .stn-pole,#cart .stn-side{display:none}
+  #cart .stn-mon{margin:0 0 -2px}
+  #cart .stn-mon .stl{display:none}
+  .mhot.mkey::after{content:"";position:absolute;inset:-5px -3px}
+  .dfpm{width:54px;height:54px;font-size:26px}
+  .dfkey{min-height:56px;font-size:15px}
+  .dfdial .knob{width:92px;height:92px}
+  .dfdial{gap:16px}
 }
 </style>
 

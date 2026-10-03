@@ -640,7 +640,33 @@ class Monitor {
 let cleanups = [];
 const MODALS = new Set();
 function cleanup() { cleanups.forEach(f => { try { f(); } catch (e) { /* ignore */ } }); cleanups = []; MODALS.forEach(m => m.close()); }
-function go(name, arg) { cleanup(); CUR = { name, arg }; window.scrollTo(0, 0); (SCREENS[name] || SCREENS.home)(arg); }
+/* The guide: what a case is, what the monitor shows, and where every action and item lives. Opens by itself once. */
+function tutorial() {
+  const T = t('tut'); let i = 0;
+  const names = g => D.ACTIONS.filter(a => a.g === g).map(a => esc(a.n)).join(' \u00b7 ');
+  const page = pg => `<h2>${esc(pg.h)}</h2>
+    ${pg.vis === 'pt' ? `<div class="tutvis"><div class="pt skin-pink eyes-open breathing has-mask has-pads has-io" style="--skin:#f0c4a4;--lips:#c9737a;--skinE:#a8796a">${patientSVG('child')}</div></div>` : pg.vis === 'cart' ? `<div class="tutvis cart" inert>${cartHTML().split('<div class="tray"')[0]}</div>` : ''}
+    ${pg.p.map(x => `<p>${esc(x)}</p>`).join('')}
+    ${pg.list ? `<p class="tutlist">${names(pg.list)}</p>` : ''}
+    ${pg.groups ? `<dl class="tutdl">${pg.groups.map(g => `<dt>${esc(D.GROUPS.find(x => x.id === g).full)}</dt><dd>${names(g)}</dd>`).join('')}</dl>` : ''}
+    ${(pg.p2 || []).map(x => `<p>${esc(x)}</p>`).join('')}`;
+  const m = modal(`<div class="sheet wide tut" role="dialog" aria-modal="true"><div class="eyebrow">${esc(T.title)} \u00b7 <span id="tutN"></span></div><div id="tutB"></div>
+    <div class="row"><button class="btn primary" data-n></button><button class="btn ghost" data-p>${esc(T.prev)}</button><button class="btn ghost" data-x>${esc(T.close)}</button></div></div>`);
+  const ui = () => {
+    $('#tutN', m.el).textContent = `${i + 1} / ${T.pages.length}`; $('#tutB', m.el).innerHTML = page(T.pages[i]);
+    $('[data-p]', m.el).disabled = i === 0; $('[data-n]', m.el).textContent = i === T.pages.length - 1 ? T.done : T.next;
+    const sh = $('.sheet', m.el); if (sh) sh.scrollTop = 0; m.el.scrollTop = 0;
+  };
+  m.el.addEventListener('click', e => {
+    if (e.target.closest('[data-n]')) { if (i === T.pages.length - 1) m.close(); else { i++; ui(); } }
+    else if (e.target.closest('[data-p]')) { if (i) { i--; ui(); } }
+    else if (e.target.closest('[data-x]')) m.close();
+  });
+  if (!Store.d.tutSeen) { Store.d.tutSeen = true; Store.save(); }
+  ui();
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-tut]')) tutorial(); });
+function go(name, arg) { cleanup(); CUR = { name, arg }; window.scrollTo(0, 0); if (name === 'home' && !Store.d.tutSeen && !/[?&]debug/.test(location.search)) setTimeout(() => { if (CUR.name === 'home' && !Store.d.tutSeen) tutorial(); }, 500); (SCREENS[name] || SCREENS.home)(arg); }
 function modal(html) {
   const el = document.createElement('div'); el.className = 'scrim'; el.innerHTML = html; document.body.appendChild(el);
   const m = { el, close() { el.remove(); MODALS.delete(m); if (S) S.modal = MODALS.size > 0; } };
@@ -656,10 +682,10 @@ function topBar() {
   const r = rankOf(Store.d.xp);
   return `<div class="top"><div class="brand"><span class="dot"></span><b>PALS Resus Bay</b></div>
     <div class="xp" title="${esc(r.next ? t('nextRank', r.next) : t('topRank'))}"><div><strong>${esc(r.name)}</strong> <small>${Store.d.xp} XP</small></div><div class="bar"><i style="width:${r.pct}%"></i></div></div>
-    ${langBtn()}<button class="iconbtn" data-report aria-label="${esc(t('reportAria'))}">${IC.flag}</button><button class="iconbtn" data-snd aria-label="${esc(t('sound'))}">${Store.d.sound ? IC.snd : IC.mute}</button></div>`;
+    ${langBtn()}<button class="iconbtn" data-tut aria-label="${esc(t('tut').title)}" title="${esc(t('tut').title)}">?</button><button class="iconbtn" data-report aria-label="${esc(t('reportAria'))}">${IC.flag}</button><button class="iconbtn" data-snd aria-label="${esc(t('sound'))}">${Store.d.sound ? IC.snd : IC.mute}</button></div>`;
 }
 const langBtn = () => `<button class="langbtn" data-lang aria-label="${esc(t('langAria'))}">${esc(t('langBtn'))}</button>`;
-const secHead = (title, sub) => `<div class="sechead"><button class="iconbtn" data-go="home" aria-label="${esc(t('backHome'))}">${IC.back}</button><h2>${esc(title)}</h2>${langBtn()}<button class="iconbtn" data-report aria-label="${esc(t('reportAria'))}">${IC.flag}</button>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}</div>`;
+const secHead = (title, sub) => `<div class="sechead"><button class="iconbtn" data-go="home" aria-label="${esc(t('backHome'))}">${IC.back}</button><h2>${esc(title)}</h2>${langBtn()}<button class="iconbtn" data-tut aria-label="${esc(t('tut').title)}" title="${esc(t('tut').title)}">?</button><button class="iconbtn" data-report aria-label="${esc(t('reportAria'))}">${IC.flag}</button>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}</div>`;
 app.addEventListener('click', e => {
   const g = e.target.closest('[data-go]');
   if (g) { go(g.dataset.go, g.dataset.arg); return; }
@@ -1316,7 +1342,7 @@ function showBrief() {
     ${hw ? weightStepHTML() : ''}
     <div class="lvbrief lv${S.lv}"><b>${esc(t('levels')[S.lv - 1].n)}</b><span>${esc(t('levels')[S.lv - 1].d)}</span></div>
     <ul class="how">${t('how').map(x => `<li>${esc(x)}</li>`).join('')}${Store.d.fatigue === true ? `<li>${esc(t('howCq'))}</li>` : ''}</ul>
-    <div class="row"><button class="btn primary" data-start ${hw ? 'disabled' : ''}>${esc(t('startClock'))}</button><button class="btn ghost" data-go="cases">${esc(t('back'))}</button></div>
+    <div class="row"><button class="btn primary" data-start ${hw ? 'disabled' : ''}>${esc(t('startClock'))}</button><button class="btn ghost" data-go="cases">${esc(t('back'))}</button><button class="btn ghost" data-tut>${esc(t('tut').title)}</button></div>
   </div>`);
   m.el.addEventListener('click', e => {
     const wb = e.target.closest('[data-wt]'); if (wb && !wb.disabled) { wtAnswer(+wb.dataset.wt, m, wb); return; }
@@ -1366,6 +1392,7 @@ function nextPhase() {
   S.i++;
   const p = S.c.phases[S.i];
   if (!p) { finish(); return; }
+  stallReset();
   /* a complication only happens if the thing it is about is really in place */
   if (p.cond && !p.cond()) { nextPhase(); return; }
   if (p.build) p.build(p);
@@ -1499,6 +1526,21 @@ function physio(now, dt, p) {
     S.dAcc += dt;
     if (S.dAcc >= 2.5) { S.dAcc = 0; worsen(); }
   }
+  /* An arrest where nothing moves for a long time (well past the step's time limit, dialogs not counted): the rhythm
+     fades and the EtCO2 falls; if it goes on, the resuscitation fails. Any completed action resets it. */
+  if (!st.pulse && !S.died && !S.roscHold && !S.busy && (p.type === 'act' || p.type === 'q')) {
+    S.stallT = (S.stallT || 0) + dt;
+    const over = S.stallT - limOf(p) - 40;
+    if (over > 0) {
+      if (!S.stall) {
+        S.stall = { hr: st.hr, acc: 0 }; cq.tg = Math.min(cq.tg, 8); tlEv('worse', t('stallEv'));
+        if (S.lv < 3) { S.fb = { t: 'bad', h: t('stallH'), m: t('stallM') }; renderSitu(); }
+      }
+      S.stall.acc += dt;
+      if (S.stall.acc >= 3) { S.stall.acc = 0; if (st.rhythm === 'pea' && st.hr > 20) { S.worsening = true; applySt({ hr: Math.max(20, st.hr - 3) }); S.worsening = false; } }
+      if (over > (st.cpr ? 100 : 60)) { die(true); return; }
+    }
+  }
   /* once oxygen is on, SpO2 lost to waiting climbs back to where it was */
   const f = S.flags;
   if (S.wBase.spo2 != null && st.pulse && (f.o2 || f.bvm || f.tube)) {
@@ -1536,7 +1578,7 @@ function physio(now, dt, p) {
   smoothVitals(dt); wiggle(dt); postLive(); nbpTick(dt);
   /* the pleth wave shrinks and grows with perfusion; untreated VF gets finer, good compressions coarsen it again */
   S.perf = (S.perf ?? perfK()) + (perfK() - (S.perf ?? perfK())) * Math.min(1, dt / 4);
-  S.vfa = st.rhythm === 'vf' && !st.pulse ? Math.max(0.35, Math.min(1, (S.vfa ?? 1) + (st.cpr ? dt / 60 : -dt / 80))) : 1;
+  S.vfa = st.rhythm === 'vf' && !st.pulse ? Math.max(0.35, Math.min(1, (S.vfa ?? 1) + (S.stall ? -dt / 40 : st.cpr ? dt / 60 : -dt / 80))) : 1;
   /* The ECG rate drifts toward a new rate within the same rhythm; a rhythm change (e.g. conversion) is immediate. */
   if (st.rhythm !== S.ehR || S.eh == null) { S.ehR = st.rhythm; S.eh = st.hr; }
   else S.eh += (st.hr - S.eh) * Math.min(1, dt / 3.5);
@@ -1630,13 +1672,13 @@ function worsen() {
   if (!S.warned) { S.warned = true; tlEv('worse', t('worseEv')); if (S.lv === 1 && !S.preterm) { S.fb = { t: 'note', h: t('worseH'), m: t('worseM') }; renderSitu(); } }
 }
 /* Left untreated long enough, the child arrests: the case ends there. */
-function die() {
+function die(arr) {
   if (S.died) return;
   S.died = true;
-  S.worsening = true; applySt({ pulse: false, rhythm: 'pea', hr: 24, rr: 0, cpr: false, skin: 'grey', look: t('lookDead'), alarm: true }); S.worsening = false;
-  tlEv('died', t('diedEv'));
-  err(t('diedM'), true, null, t('diedWhat'), 50, t('diedH'));
-  const p = { type: 'end', need: [], say: t('diedSay') }, ms = window.__fastEnd ? 1500 : 10000;
+  S.worsening = true; applySt(arr ? { rhythm: 'asystole', hr: 0, rr: 0, cpr: false, skin: 'grey', look: t('lookDead'), alarm: true } : { pulse: false, rhythm: 'pea', hr: 24, rr: 0, cpr: false, skin: 'grey', look: t('lookDead'), alarm: true }); S.worsening = false;
+  tlEv('died', t(arr ? 'stallDiedH' : 'diedEv'));
+  err(t(arr ? 'stallDiedM' : 'diedM'), true, null, t(arr ? 'stallDiedWhat' : 'diedWhat'), 50, t(arr ? 'stallDiedH' : 'diedH'));
+  const p = { type: 'end', need: [], say: t(arr ? 'stallDiedSay' : 'diedSay') }, ms = window.__fastEnd ? 1500 : 10000;
   S.i = S.c.phases.length; S.p = p; S.done = new Set(); S.busy = true; S.endAt = performance.now() + ms;
   renderSitu(); dimCart(true);
   setTimeout(() => { if (S && S.p === p) { S.worsening = true; applySt({ rhythm: 'asystole', hr: 0 }); S.worsening = false; } }, Math.min(ms, 5000));
@@ -1877,8 +1919,14 @@ function err(msg, danger, id, label, pen, head, topic) {
   if (id) flashBtn(id, 'flashbad');
   renderSitu(); updScore();
 }
+/* progress made: the stalled-arrest clock starts again and the rhythm recovers */
+function stallReset() {
+  S.stallT = 0;
+  if (S.stall) { if (!S.st.pulse && S.st.rhythm === 'pea') { S.worsening = true; applySt({ hr: S.stall.hr }); S.worsening = false; } S.cq.tg = 17 + Math.random() * 3; S.stall = null; }
+}
 function complete(id, idx, label) {
   if (!S) return;
+  stallReset();
   const p = S.p; S.done.add(idx);
   effects(id); rec(label || actName(id), 'ok'); tlEv(id, label || actName(id)); Sound.ok(); flashBtn(id, 'flashok');
   const all = p.need.every((_, i) => S.done.has(i));
