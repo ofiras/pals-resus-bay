@@ -381,7 +381,30 @@ const Sound = {
     ns.connect(hp).connect(g).connect(c.destination); ns.start(t0); ns.stop(t0 + 0.14);
   },
   /* measurement done: one soft beep */
-  cuffDone() { this.tone(1046, 0.09, 'sine', 0.035); }
+  cuffDone() { this.tone(1046, 0.09, 'sine', 0.035); },
+  /* Chest sounds through the stethoscope, two breaths. Normal air entry is soft filtered noise; stridor is a harsh
+     high-pitched inspiratory note, wheeze a musical expiratory one, crackles are fine clicks on inspiration, grunting a
+     short low expiratory note; a nearly silent chest is barely audible. */
+  breath(k, P = 2) {
+    if (!Store.d.sound || !this.ctx || this.ctx.state !== 'running') return;
+    const c = this.ctx, out = c.destination, T0 = c.currentTime + 0.05, ins = P * 0.4, ex = P * 0.5, vol = k.silent ? 0.25 : 1;
+    const env = (g, t, d, v) => { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + d * 0.35); g.gain.linearRampToValueAtTime(v * 0.7, t + d * 0.75); g.gain.linearRampToValueAtTime(0.0001, t + d); };
+    const air = (t, d, f, v) => { const ns = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain(); ns.buffer = this.noiseBuf(); ns.loop = true; bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 0.9; env(g, t, d, v * vol); ns.connect(bp).connect(g).connect(out); ns.start(t); ns.stop(t + d + 0.05); };
+    const note = (t, d, f0, f1, type, v, q) => { const o = c.createOscillator(), bp = c.createBiquadFilter(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f1, t + d); bp.type = 'bandpass'; bp.frequency.value = (f0 + f1) / 2; bp.Q.value = q; env(g, t, d, v * vol); o.connect(bp).connect(g).connect(out); o.start(t); o.stop(t + d + 0.05); };
+    for (let n = 0; n < 2; n++) {
+      const t = T0 + n * P;
+      air(t, ins, 420, 0.05); air(t + ins + 0.05, ex, 260, 0.022);
+      if (k.stridor) { note(t, ins, 620, 760, 'sawtooth', 0.03, 6); note(t, ins, 930, 1080, 'sawtooth', 0.012, 8); }
+      if (k.wheeze) { note(t + ins + 0.05, ex, 520, 430, 'triangle', 0.035, 4); note(t + ins + 0.1, ex * 0.9, 390, 330, 'sine', 0.025, 4); }
+      if (k.crackle) for (let i = 0; i < 9; i++) {
+        const ct = t + ins * (0.35 + 0.6 * Math.random()), ns = c.createBufferSource(), hp = c.createBiquadFilter(), g = c.createGain();
+        ns.buffer = this.noiseBuf(); hp.type = 'highpass'; hp.frequency.value = 1800;
+        g.gain.setValueAtTime(0.05 * vol, ct); g.gain.exponentialRampToValueAtTime(0.0001, ct + 0.012);
+        ns.connect(hp).connect(g).connect(out); ns.start(ct, Math.random() * 0.5); ns.stop(ct + 0.02);
+      }
+      if (k.grunt) note(t + ins + 0.05, 0.22, 210, 170, 'sawtooth', 0.04, 2);
+    }
+  }
 };
 document.addEventListener('pointerdown', () => Sound.ensure(), { passive: true });
 document.addEventListener('keydown', () => Sound.ensure());
@@ -468,7 +491,7 @@ class Rhythm {
   ecg(t) {
     this.sched(t + 0.6);
     const ty = this.type; let v = 0;
-    if (ty === 'vf') { const a = 0.3 + 0.2 * Math.sin(2 * Math.PI * 0.21 * t + this.seed); return a * (Math.sin(2 * Math.PI * 5.3 * t) + 0.55 * Math.sin(2 * Math.PI * 7.9 * t + 1.3) + 0.4 * Math.sin(2 * Math.PI * 3.1 * t + 0.4 + this.seed)); }
+    if (ty === 'vf') { const a = (0.3 + 0.2 * Math.sin(2 * Math.PI * 0.21 * t + this.seed)) * (this.amp ?? 1); return a * (Math.sin(2 * Math.PI * 5.3 * t) + 0.55 * Math.sin(2 * Math.PI * 7.9 * t + 1.3) + 0.4 * Math.sin(2 * Math.PI * 3.1 * t + 0.4 + this.seed)); }
     if (ty === 'torsades') return 0.85 * Math.sin(2 * Math.PI * 3.7 * t) * (0.2 + 0.8 * Math.abs(Math.sin(2 * Math.PI * 0.32 * t)));
     if (ty === 'asystole') return 0.025 * Math.sin(2 * Math.PI * 0.27 * t + this.seed);
     if (ty === 'afib') v += 0.045 * (Math.sin(2 * Math.PI * 6.3 * t) + Math.sin(2 * Math.PI * 8.9 * t + 1) + 0.7 * Math.sin(2 * Math.PI * 5.1 * t + 2)) / 2;
@@ -500,9 +523,17 @@ class Monitor {
   now() { return (performance.now() - this.t0) / 1000; }
   set(s) {
     const p = this.st; this.st = Object.assign({}, p, s);
-    if (this.st.rhythm !== p.rhythm) this.r = new Rhythm(this.st.rhythm, this.st.hr, this.now() + 0.12);
+    if (this.st.rhythm !== p.rhythm) this.r = new Rhythm(this.st.rhythm, this.st.hr, Math.max(this.now() + 0.12, this.holdT || 0));
     else if (this.st.hr !== p.hr) this.r.hr = Math.max(20, this.st.hr || 80);
+    this.r.amp = this.st.vfa;
   }
+  /* A pause in the heartbeat (adenosine, a shock): no complexes for s seconds, then whatever rhythm there is by then. */
+  hold(s) {
+    const now = this.now(), t = now + s; this.holdT = Math.max(this.holdT || 0, t);
+    this.r.ev = this.r.ev.filter(e => e.t <= now); this.r.n = Math.max(this.r.n, t); this.r.na = Math.max(this.r.na, t);
+  }
+  /* A shock: the trace saturates, drifts back to the baseline, and only then shows the rhythm. */
+  shock() { this.shockT = this.now(); this.hold(1.7); }
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.max(60, Math.round(this.cv.clientWidth)), h = Math.max(60, Math.round(this.cv.clientHeight));
@@ -529,8 +560,11 @@ class Monitor {
       const k = Math.floor(tt / sw); col = Math.min(w - 1, Math.floor((tt / sw - k) * w));
       let e = 0, p = 0, cc = NaN, rs = 0;
       if (st.monitor) {
-        e = r.ecg(tt) + (st.cpr ? cprArt(tt) : 0) + (Math.random() - 0.5) * 0.014;
-        p = st.pulse ? r.pleth(tt) : (st.cpr ? 0.35 * cprPleth(tt) : 0);
+        const sx = this.shockT != null ? tt - this.shockT : -1;
+        e = r.ecg(tt);
+        if (sx >= 0 && sx < 1.7) e = (r.type === 'vf' || r.type === 'torsades' ? 0 : e) + (sx < 0.06 ? 1.25 : sx < 0.12 ? -0.75 : 0.9 * Math.exp(-(sx - 0.12) / 0.35));
+        e += (st.cpr ? cprArt(tt) : 0) + (Math.random() - 0.5) * 0.014;
+        p = st.pulse ? r.pleth(tt) * (st.perf ?? 1) : (st.cpr ? 0.35 * cprPleth(tt) : 0);
         if (st.co2 != null) cc = capWave(tt, st);
         if (this.full) rs = respWave(tt, st);
       }
@@ -561,7 +595,7 @@ class Monitor {
     const cap = this.st.monitor && this.st.co2 != null;
     /* Bedside layout: one lane per waveform (ECG larger), each lined up with its number beside the canvas. */
     if (this.full) {
-      const L = [['e', 1.4, COL.ecg, 'II', 0.62, 0.48], ['p', 1, COL.spo2, 'Pleth', 0.88, 0.66], ['r', 1, COL.rr, 'Resp', 0.86, 0.6]].concat(cap ? [['c', 1, COL.co2, 'CO\u2082', 0.92, 0.75]] : []);
+      const L = [['e', 1.4, COL.ecg, 'II', 0.62, 0.48], ['p', 1, COL.spo2, this.st.monitor && this.st.pulse && this.st.perf < 0.5 ? 'Pleth \u00b7 low perfusion' : 'Pleth', 0.88, 0.66], ['r', 1, COL.rr, 'Resp', 0.86, 0.6]].concat(cap ? [['c', 1, COL.co2, 'CO\u2082', 0.92, 0.75]] : []);
       const tot = L.reduce((a, l) => a + l[1], 0); let y = 0;
       c.font = '600 10px "IBM Plex Mono", monospace';
       L.forEach(([k, wt, col, lab, base, amp], i) => {
@@ -790,6 +824,7 @@ function patientSVG(kind) {
     <path d="M${cx - p.tw * 0.28} ${p.ty + p.th * 0.42} q ${p.tw * 0.28} 5 ${p.tw * 0.56} 0 M${cx - p.tw * 0.3} ${p.ty + p.th * 0.52} q ${p.tw * 0.3} 5 ${p.tw * 0.6} 0" stroke="var(--skinE)" stroke-width=".7" fill="none" opacity=".45"/>
     <circle cx="${nip[0]}" cy="${nip[1]}" r="1.4" fill="var(--lips)" opacity=".7"/><circle cx="${nip[2]}" cy="${nip[1]}" r="1.4" fill="var(--lips)" opacity=".7"/>
     <circle cx="${cx}" cy="${p.ty + p.th * 0.74}" r="1.2" fill="var(--skinE)"/>
+    <g class="retr" stroke="#6b3f33" fill="none" stroke-linecap="round"><path d="M${cx - p.tw * 0.36} ${p.ty + p.th * 0.66} q ${p.tw * 0.16} -${p.th * 0.1} ${p.tw * 0.33} -${p.th * 0.03} M${cx + p.tw * 0.36} ${p.ty + p.th * 0.66} q -${p.tw * 0.16} -${p.th * 0.1} -${p.tw * 0.33} -${p.th * 0.03}" stroke-width="1.5"/><path d="M${cx - p.tw * 0.3} ${p.ty + p.th * 0.33} q ${p.tw * 0.1} 2.5 ${p.tw * 0.2} 0 M${cx + p.tw * 0.3} ${p.ty + p.th * 0.33} q -${p.tw * 0.1} 2.5 -${p.tw * 0.2} 0" stroke-width="1"/><path d="M${cx - 3.5} ${p.ty + 2.5} q 3.5 4 7 0" stroke-width="1.4"/></g>
     <g class="mottle" fill="#7d5a78" opacity=".35"><circle cx="${cx - 9}" cy="${p.ty + 14}" r="4"/><circle cx="${cx + 9}" cy="${p.ty + 26}" r="5"/><circle cx="${cx - 4}" cy="${p.ty + p.th * 0.62}" r="4.5"/><circle cx="${cx + 12}" cy="${p.ty + p.th * 0.78}" r="3.5"/><circle cx="${cx - 14}" cy="${p.ty + p.th * 0.45}" r="3"/></g>
     <g class="hives" fill="#e35d6a" opacity=".55"><circle cx="${cx - 10}" cy="${p.ty + 12}" r="3"/><circle cx="${cx + 11}" cy="${p.ty + 18}" r="3.5"/><circle cx="${cx}" cy="${p.ty + p.th * 0.55}" r="2.6"/><circle cx="${cx + 12}" cy="${p.ty + p.th * 0.7}" r="3"/><circle cx="${cx - 13}" cy="${p.ty + p.th * 0.75}" r="2.2"/></g>
     ${leads}${pads}
@@ -802,7 +837,8 @@ function patientSVG(kind) {
     ? `<path d="M${cx - p.hr * 0.6} ${p.hy - p.hr * 0.72} q ${p.hr * 0.3} -${p.hr * 0.3} ${p.hr * 0.6} -${p.hr * 0.1} q ${p.hr * 0.3} -${p.hr * 0.25} ${p.hr * 0.55} ${p.hr * 0.05}" stroke="${p.hair}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`
     : `<path d="M${cx - p.hr * 1.02} ${p.hy - p.hr * 0.05} C ${cx - p.hr * 1.05} ${p.hy - p.hr * 1.15}, ${cx + p.hr * 1.05} ${p.hy - p.hr * 1.15}, ${cx + p.hr * 1.02} ${p.hy - p.hr * 0.05} C ${cx + p.hr * 0.75} ${p.hy - p.hr * 0.62}, ${cx + p.hr * 0.1} ${p.hy - p.hr * 0.5}, ${cx - p.hr * 0.25} ${p.hy - p.hr * 0.72} C ${cx - p.hr * 0.5} ${p.hy - p.hr * 0.45}, ${cx - p.hr * 0.85} ${p.hy - p.hr * 0.45}, ${cx - p.hr * 1.02} ${p.hy - p.hr * 0.05}Z" fill="${p.hair}"/>`}
   <path d="M${cx - eyeDx - 3.2} ${eyeY - 4.2} q 3.2 -1.6 6.4 0 M${cx + eyeDx - 3.2} ${eyeY - 4.2} q 3.2 -1.6 6.4 0" stroke="${p.hair}" stroke-width="1" fill="none" opacity=".8"/>
-  <path d="M${cx - eyeDx - 3} ${eyeY} q 3 2.4 6 0 M${cx + eyeDx - 3} ${eyeY} q 3 2.4 6 0" stroke="#3a2a22" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  <path class="eyeC" d="M${cx - eyeDx - 3} ${eyeY} q 3 2.4 6 0 M${cx + eyeDx - 3} ${eyeY} q 3 2.4 6 0" stroke="#3a2a22" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  <g class="eyeO">${[-1, 1].map(s => `<g class="eye"><ellipse cx="${cx + s * eyeDx}" cy="${eyeY}" rx="3.3" ry="2.5" fill="#fbfbf6" stroke="#3a2a22" stroke-width=".6"/><circle cx="${cx + s * eyeDx}" cy="${eyeY + 0.2}" r="1.7" fill="#3b2a20"/><circle cx="${cx + s * eyeDx + 0.6}" cy="${eyeY - 0.5}" r=".5" fill="#fff"/></g>`).join('')}</g>
   <path d="M${cx - 1.2} ${p.hy + p.hr * 0.12} q 1.2 2.4 2.4 0" stroke="var(--skinE)" stroke-width="1" fill="none"/>
   <ellipse cx="${cx - p.hr * 0.55}" cy="${p.hy + p.hr * 0.3}" rx="${p.hr * 0.18}" ry="${p.hr * 0.11}" fill="var(--lips)" opacity=".25"/><ellipse cx="${cx + p.hr * 0.55}" cy="${p.hy + p.hr * 0.3}" rx="${p.hr * 0.18}" ry="${p.hr * 0.11}" fill="var(--lips)" opacity=".25"/>
   <ellipse cx="${cx}" cy="${mouthY}" rx="${p.hr * 0.2}" ry="${p.hr * 0.1}" fill="var(--lips)"/>
@@ -845,7 +881,7 @@ function simScreen(arg) {
     <div class="simgrid">
       <section class="bay">
         <div class="monitor imv" id="mon">
-          <div class="mhd"><span class="mbed">${esc(t('bedNo'))} \u00b7 ${esc(c.age)}</span><span class="malm" id="mAlm"></span><button class="msil" id="mSil" type="button">${esc(t('silence'))}</button><span class="mclk" id="mClk"></span></div>
+          <div class="mhd"><span class="mbed">${esc(c.field ? 'AED' : t('bedNo'))} \u00b7 ${esc(c.age)}</span><span class="malm" id="mAlm"></span>${c.field ? '' : '<span class="mtmp">T <b id="vT">--</b> \u00b0C</span>'}<button class="msil" id="mSil" type="button">${esc(t('silence'))}</button><span class="mclk" id="mClk"></span></div>
           <div class="mmain">
             <canvas id="cv"></canvas>
             <div class="nums">
@@ -888,6 +924,8 @@ function simScreen(arg) {
   };
   /* Clinical/Expert realistic drawer: sometimes the prefilled epinephrine syringes have run out. */
 
+  const tPh = c.gen === 'arrest' ? tempOf(JSON.stringify(c.phases)) : null;
+  S.temp = tempOf([c.init && c.init.look, c.brief].join(' ')) ?? (tPh != null && tPh < 34 ? tPh : 36.5 + Math.floor(Math.random() * 6) / 10);
   smoothVitals(0);
   if (S.st.cpr) S.m.cpr0 = 0;
   /* age-based alarm limits shown beside each number, like a bedside monitor */
@@ -951,15 +989,42 @@ function simKey(e) {
   if (e.code === 'Space') { const ff = $('#ff'); if (ff) { e.preventDefault(); ff.click(); } }
 }
 const respP = () => S.post ? 60 / S.post.rate : S.st.rr > 0 ? 60 / S.st.rr : (S.flags.bvm || S.flags.tube) ? ventP() : null;
-const monState = () => ({ monitor: S.st.monitor, rhythm: S.st.rhythm, hr: S.st.hr, pulse: S.st.pulse, cpr: S.st.cpr, co2: capOn() ? (S.dv.co2 ?? co2Val()) : null, vent: ventP(), tube: S.flags.tube, rp: respP() });
+const tempOf = s => { const m = /(\d\d(?:\.\d)?) ?\u00b0C/.exec(String(s || '')); return m ? +m[1] : null; };
+/* How well the fingertip is perfused (0.3 to 1): sets the height of the pleth wave. Falls with the pressure and with cold, mottled skin. */
+function perfK() {
+  const st = S.st, bp = parseBP(st.bp), lo = sbpLow(S.ageY); let k = 1;
+  if (bp) k = Math.max(0.3, Math.min(1, (bp[0] - (lo - 22)) / 26));
+  if (st.skin === 'mottled' || st.skin === 'grey') k = Math.min(k, 0.45); else if (st.skin === 'pale') k = Math.min(k, 0.75);
+  return k;
+}
+/* What the child looks like, read from the appearance line: eyes, work of breathing, gasps, and what the chest sounds like. */
+const LOOK_RE = {
+  not: /no (stridor|wheez\w*)|\u05d0\u05d9\u05df (\u05e1\u05d8\u05e8\u05d9\u05d3\u05d5\u05e8|\u05e6\u05e4\u05e6\u05d5\u05e4\u05d9\u05dd)/gi,
+  shut: /unresponsive|limp|floppy|letharg|sedated|slumped|pain only|only to pain|not breathing|collapsed|barely respon|breathing pause|\u05dc\u05d0 \u05de\u05d2\u05d9\u05d1|\u05e8\u05e4\u05d5\u05d9|\u05dc\u05ea\u05e8\u05d2\u05d9|\u05de\u05d5\u05e8\u05d3\u05de|\u05e6\u05e0\u05d5\u05d7|\u05dc\u05db\u05d0\u05d1|\u05dc\u05d0 \u05e0\u05d5\u05e9|\u05e9\u05e8\u05d5\u05e2|\u05d1\u05e7\u05d5\u05e9\u05d9 \u05de\u05d2\u05d9\u05d1|\u05d4\u05e4\u05e1\u05e7\u05ea \u05e0\u05e9\u05d9\u05de\u05d4|\u05dc\u05dc\u05d0 \u05ea\u05d2\u05d5\u05d1\u05d4/i,
+  half: /drowsy|sleepy|confused|tired|moaning|groaning|waking|\u05d9\u05e9\u05e0\u05d5\u05e0|\u05de\u05d1\u05d5\u05dc\u05d1\u05dc|\u05e2\u05d9\u05d9\u05e4|\u05d2\u05d5\u05e0\u05d7|\u05de\u05ea\u05e2\u05d5\u05e8\u05e8/i,
+  wob: /grunt|retraction|stridor|wheez|tripod|flaring|\u05d0\u05e0\u05e7\u05d4|\u05e0\u05e1\u05d9\u05d2\u05d5\u05ea|\u05e1\u05d8\u05e8\u05d9\u05d3\u05d5\u05e8|\u05e6\u05e4\u05e6\u05d5\u05e4|\u05d7\u05e6\u05d5\u05d1\u05d4|\u05db\u05e0\u05e4\u05d9 \u05d4\u05d0\u05e3/i,
+  gasp: /gasp|\u05d2\u05e1\u05d9\u05e1\u05d4/i, stridor: /stridor|\u05e1\u05d8\u05e8\u05d9\u05d3\u05d5\u05e8/i, wheeze: /wheez|\u05e6\u05e4\u05e6\u05d5\u05e4/i, crackle: /grunt|crackle|\u05d0\u05e0\u05e7\u05d4|\u05d7\u05e8\u05d7\u05d5\u05e8/i, grunt: /grunt|\u05d0\u05e0\u05e7\u05d4/i, silent: /silent chest|\u05d7\u05d6\u05d4 \u05db\u05de\u05e2\u05d8 \u05e9\u05e7\u05d8/i
+};
+const lookTxt = () => String(S.st.look || '').replace(LOOK_RE.not, '');
+function chestSound() {
+  const st = S.st, f = S.flags, lk = lookTxt(), bag = f.bvm || f.tube;
+  if (!(st.rr > 0 && st.pulse) && !bag) return;
+  const k = {}; ['stridor', 'wheeze', 'crackle', 'grunt', 'silent'].forEach(n => { k[n] = LOOK_RE[n].test(lk); });
+  if (f.tube) k.stridor = k.grunt = false;
+  Sound.breath(k, Math.max(1.1, Math.min(3, st.rr > 0 ? 60 / st.rr : 2.5)));
+}
+const monState = () => ({ monitor: S.st.monitor, rhythm: S.st.rhythm, hr: S.st.hr, pulse: S.st.pulse, cpr: S.st.cpr, perf: S.perf ?? perfK(), vfa: S.vfa ?? 1, co2: capOn() ? (S.dv.co2 ?? co2Val()) : null, vent: ventP(), tube: S.flags.tube, rp: respP() });
 function applySt(o) {
   if (!S.worsening && S.wBase) { if (o.spo2 != null) delete S.wBase.spo2; if (o.skin) delete S.wBase.skin; }
+  if (o.look) { const tv = tempOf(o.look); if (tv != null) S.temp = tv; }
   Object.assign(S.st, o); if (S.st.cpr && S.m.cpr0 === null) S.m.cpr0 = S.codeT; MON.set(monState()); tlTrack(); updAll(); }
 /* Capnography: in-line on the bag or the tube, or whenever the case reports an EtCO2. */
 const capOn = () => !!(S && (S.flags.tube || S.flags.bvm || S.st.etco2 != null || S.post));
 function co2Val() {
   const st = S.st;
   if (st.etco2 != null) return st.etco2;
+  /* the heart is beating again under the compressions: EtCO2 jumps before anyone has felt a pulse */
+  if (S.roscHold && st.cpr) return 42;
   if (st.pulse) return 38;
   return st.cpr ? S.cq.v : 4;
 }
@@ -1073,6 +1138,7 @@ function updVitals() {
     $('#nbpSt').textContent = nb.busy ? 'CUFF' : 'START';
   }
   $('#vRR').textContent = on && dv.rr != null ? shown('rr') : '--';
+  const vt = $('#vT'); if (vt) vt.textContent = on && S.temp != null ? S.temp.toFixed(1) : '--';
   $('#vCO').textContent = on && dv.co2 != null ? shown('co2') : '--';
   const pr = $('#vPR'); if (pr) pr.textContent = on && dv.spo2 != null && dv.hr != null ? shown('hr') : '--';
   const mp = $('#vMAP'); if (mp) mp.textContent = nv && !nb.busy ? `(${Math.round((nv.s + 2 * nv.d) / 3)})` : '';
@@ -1100,7 +1166,11 @@ function updPatient() {
   const sk = SKIN[st.skin] || SKIN.pink;
   pt.style.setProperty('--skin', sk[0]); pt.style.setProperty('--lips', sk[1]); pt.style.setProperty('--skinE', sk[2] || '#a8796a');
   pt.style.setProperty('--br', (st.rr ? Math.max(0.8, Math.min(6, 60 / st.rr)) : 3) + 's');
+  const lk = lookTxt(), shut = !st.pulse || f.tube || S.died || LOOK_RE.shut.test(lk);
   pt.className = 'pt skin-' + st.skin
+    + (shut ? '' : LOOK_RE.half.test(lk) || (st.spo2 != null && st.spo2 < 75) ? ' eyes-half' : ' eyes-open')
+    + (st.pulse && st.rr > 0 && !f.tube && LOOK_RE.wob.test(lk) ? ' wob' : '')
+    + (!st.cpr && !f.bvm && !f.tube && !S.died && LOOK_RE.gasp.test(lk) ? ' gasp' : '')
     + (st.cpr ? ' cpr' : '') + (!st.cpr && st.pulse && st.rr > 0 ? ' breathing' : '')
     + ((f.o2 || f.bvm) && !f.tube ? ' has-mask' : '') + (f.bvm && !f.tube ? ' has-bag' : '')
     + (f.tube ? ' has-tube' : '') + (f.pads ? ' has-pads' : '') + (f.leads ? ' has-leads' : '') + (f.io ? ' has-io' : '');
@@ -1124,7 +1194,7 @@ function flashBtn(id, cls) {
   });
 }
 function zap() {
-  Sound.zap();
+  Sound.zap(); if (MON) MON.shock();
   const fx = document.createElement('div'); fx.className = 'flashfx'; document.body.appendChild(fx); setTimeout(() => fx.remove(), 500);
   const pt = $('#pt'); if (pt) { pt.classList.remove('jolt'); void pt.offsetWidth; pt.classList.add('jolt'); setTimeout(() => pt && pt.classList.remove('jolt'), 400); }
 }
@@ -1352,10 +1422,13 @@ function physio(now, dt, p) {
     }
   }
   smoothVitals(dt); wiggle(dt); postLive(); nbpTick(dt);
+  /* the pleth wave shrinks and grows with perfusion; untreated VF gets finer, good compressions coarsen it again */
+  S.perf = (S.perf ?? perfK()) + (perfK() - (S.perf ?? perfK())) * Math.min(1, dt / 4);
+  S.vfa = st.rhythm === 'vf' && !st.pulse ? Math.max(0.35, Math.min(1, (S.vfa ?? 1) + (st.cpr ? dt / 60 : -dt / 80))) : 1;
   /* The ECG rate drifts toward a new rate within the same rhythm; a rhythm change (e.g. conversion) is immediate. */
   if (st.rhythm !== S.ehR || S.eh == null) { S.ehR = st.rhythm; S.eh = st.hr; }
   else S.eh += (st.hr - S.eh) * Math.min(1, dt / 3.5);
-  if (MON) MON.set({ co2: capOn() ? S.dv.co2 : null, vent: ventP(), tube: S.flags.tube, hr: Math.round(S.eh), rp: respP() });
+  if (MON) MON.set({ co2: capOn() ? S.dv.co2 : null, vent: ventP(), tube: S.flags.tube, hr: Math.round(S.eh), rp: respP(), perf: S.perf, vfa: S.vfa });
   S.smT += dt;
   if (S.smT >= 1) {
     S.smT = 0;
@@ -1549,7 +1622,7 @@ function effects(id) {
     case 'glucose': if (S.post) S.post.gluK = true; break;
     case 'shock': S.shocks++; if (S.m.shock1 === null) S.m.shock1 = S.codeT; zap(); break;
     case 'sync': S.syncs++; zap(); break;
-    case 'adenosine': S.adeno++; break;
+    case 'adenosine': S.adeno++; if (MON && S.st.pulse) MON.hold(3.2); break;
   }
   updAll();
 }
@@ -1566,6 +1639,7 @@ function rxChain(id, key, p) {
 function doAction(id, ro) {
   if (!S || S.busy || !S.started || S.modal) return;
   const p = S.p; if (!p || p.type === 'q' || p.type === 'end') return;
+  if (id === 'auscult') chestSound();
   if (p.type === 'post') { postAct(id); return; }
   if (S.roscHold === p && S.st.cpr) {
     if (id === 'cpr') { S.fb = { t: 'note', h: t('fbAlready'), m: t('roscRunning') }; renderSitu(); return; }

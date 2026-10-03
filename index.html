@@ -447,6 +447,20 @@ p{margin:0}
 .pt.has-bag .bagbody{animation:squeeze 2.6s ease-in-out infinite}
 @keyframes squeeze{0%,55%,100%{transform:scale(1)}18%{transform:scale(1,.62)}}
 .pt.has-tube .mask{display:none!important}
+.pt .eyeO,.pt .retr{display:none}
+.pt.eyes-open .eyeO,.pt.eyes-half .eyeO{display:block}
+.pt.eyes-open .eyeC,.pt.eyes-half .eyeC{display:none}
+.pt .eye{transform-box:fill-box;transform-origin:center}
+.pt.eyes-open .eye{animation:blinkeye 4.6s infinite}
+.pt.eyes-half .eye{transform:scaleY(.5)}
+@keyframes blinkeye{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.pt.wob.breathing .retr{display:block;animation:retr var(--br,2.6s) ease-in-out infinite}
+@keyframes retr{0%,100%{opacity:.08}42%{opacity:.9}}
+.pt.wob.breathing .chest{animation-name:breatheHard}
+@keyframes breatheHard{0%,100%{transform:scale(1,1)}45%{transform:scale(1.08,1.04)}}
+.pt.gasp:not(.cpr) .chest{animation:gasp 5s ease-out infinite}
+@keyframes gasp{0%,13%,100%{transform:scale(1,1)}5%{transform:scale(1.09,1.06)}}
+.imv .mtmp{white-space:nowrap;color:#ffb46b;font-size:11px}.imv .mtmp b{font-family:var(--display);font-size:15px;font-weight:800}
 .pt.jolt svg{animation:jolt .35s}
 @keyframes jolt{25%{transform:translateY(-6px)}55%{transform:translateY(3px)}}
 
