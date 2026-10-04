@@ -824,6 +824,8 @@ p{margin:0}
 .imv .nums{display:grid;grid-template-rows:1.4fr 1fr 1fr;border-inline-start:1px solid #16303b}
 /* the numbers column takes its height from the waveform canvas, so every number sits beside its own lane */
 .imv .nums{height:0;min-height:100%;overflow:hidden}.imv .nb{overflow:hidden}
+.imv #wSp{container-type:size}
+@container (max-height: 70px){.imv .nb .pr{display:none}}
 .monitor.imv.capno .nums{grid-template-rows:1.4fr 1fr 1fr 1fr}
 .imv .nb{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 8px;padding:2px 10px;border-top:1px solid #16303b;color:var(--vc);min-height:0}
 .imv .nb:first-child{border-top:0}
