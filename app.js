@@ -948,6 +948,7 @@ function simScreen(arg) {
     <div class="simbar"><div class="in">
       <button class="iconbtn" id="sBack" aria-label="${esc(t('leaveCase'))}">${IC.back}</button>
       <div class="ttl"><span><i class="lvtag lv${lv}">${esc(LVN.n)}</i>${Store.d.real !== false ? ` <i class="lvtag real">${esc(t('realTag'))}</i>` : ''} ${esc(c.age)} \u00b7 <span id="ttlWt">${hideWt ? '?' : c.wt}</span> ${t('kg')} \u00b7 ${esc(c.place)}</span></div>
+      <button class="clock gasb" id="gasBox" data-gas hidden><small>${esc(t('gasChip'))}</small><b>pH</b></button>
       <div class="clock epi" id="epiBox" hidden><small>${esc(t('epi'))}</small><b id="epiT">0:00</b></div>
       <div class="clock"><small>${esc(t('code'))}</small><b id="clk">00:00</b></div>
       <div class="clock"><small>${esc(t('score'))}</small><b id="scr">0</b></div>
@@ -1216,23 +1217,80 @@ function plotTwists(c, lv) {
   if (!c.field && !c.gen && DISPO[c.id] && !P.some(p => p.type === 'post')) {
     const e = P.findIndex(p => p.type === 'end'), W = T.wrap, d = DISPO[c.id], X = (t('extra') || {})[c.id] || {};
     P.splice(e < 0 ? P.length : e, 0,
-      mk({ k: W.reK, say: W.reSay, need: [['check', 'auscult', 'resp'], 'labs'], build: p => { const st = S.st; p.msg = W.reMsg({ hr: st.hr || '--', sp: st.spo2 || '--', bp: st.bp || '--', rr: st.rr || '--' }, X.labs); }, teach: W.reTeach, t: 20 }),
+      mk({ k: W.reK, say: W.reSay, need: [['check', 'auscult', 'resp'], 'labs'], build: p => { const st = S.st; p.msg = W.reMsg({ hr: st.hr || '--', sp: st.spo2 || '--', bp: st.bp || '--', rr: st.rr || '--' }); }, teach: W.reTeach, t: 20 }),
       mk({ type: 'q', k: W.dK, say: W.dSay, q: W.dQ, opts: ['picu', 'ward', 'home'].map(k => k === d ? { t: W.d[k], ok: true } : { t: W.d[k], why: W.dWhy[d][k] }), teach: W.dTeach }),
       mk({ type: 'q', k: W.hK, say: W.hSay, q: W.hQ, opts: [], build: handoverOpts, teach: W.hTeach }));
   }
 }
-/* Blood gas and labs outside a step that asks for them: sent now, back in about half a minute. */
-function labsSend() {
-  const x = (t('extra') || {})[S.c.id] || {}, s0 = S, res = x.labs || t('labsNone');
-  if (S.labsBack) { S.fb = { t: 'note', h: t('labsH'), m: res }; renderSitu(); return; }
-  if (S.labsSent) { S.fb = { t: 'note', h: t('fbAlready'), m: t('labsWait') }; renderSitu(); return; }
-  S.labsSent = true; rec(actName('labs'), 'ok'); Sound.click(true);
-  S.fb = { t: 'note', h: t('fbFine'), m: t('labsSentM') }; renderSitu();
+/* Bloods: the blood gas (a point-of-care analyzer next door) is back in about half a minute and prints like the real
+   one; the rest of the labs take a couple of minutes, often only after the case is over (then they are in the debrief). */
+const GAS_RE = [['ph', /^pH\s+([\d.]+)/], ['pco2', /^pCO\u2082\s+([\d.]+)/], ['po2', /^pO\u2082\s+([\d.]+)/], ['hco3', /^HCO\u2083\s+([\d.]+)/], ['lac', /^lactate\s+([\d.]+)/i], ['glu', /^glucose\s+>?\s*([\d.]+)/i], ['na', /^Na\s+([\d.]+)/], ['k', /^K\s+([\d.]+)/], ['hb', /^Hb\s+([\d.]+)/]];
+const gasItems = lang => { const x = (((I18N[lang] || {}).extra || {})[S.c.id] || {}).labs; return x ? x.split(' \u00b7 ') : []; };
+const sev = P => 1 / (1 + 23400 / (P * P * P + 150 * P));
+function gasOf() {
+  const st = S.st, f = S.flags, did = S.did || new Set(), v = {}, R = Math.random, vent = f.bvm || f.tube;
+  gasItems('en').forEach(x => { for (const [k, re] of GAS_RE) { const m = re.exec(x); if (m) { v[k] = parseFloat(m[1]); break; } } });
+  const arr = !st.pulse || S.m.arrestT > 0, poor = ['mottled', 'grey'].includes(st.skin);
+  let ph = v.ph ?? (arr ? 7.05 : poor ? 7.27 : 7.38), pco2 = v.pco2 ?? (v.hco3 != null ? 1.5 * v.hco3 + 8 : arr ? 55 : poor ? 31 : 39);
+  const hco3 = v.hco3 ?? 0.0307 * pco2 * Math.pow(10, ph - 6.1);
+  /* what was already done changes the sample: ventilation clears CO2, dextrose and fluids work */
+  if (vent && st.pulse && pco2 > 50 && did.has(f.tube ? 'airway' : 'bvm')) { pco2 = 45 + (pco2 - 45) * 0.35; ph = 6.1 + Math.log10(hco3 / (0.0307 * pco2)); }
+  let glu = v.glu ?? 95 + R() * 20, lac = v.lac ?? (arr ? 8 : poor ? 4.2 : 1.2);
+  if (did.has('dextrose') && glu < 70) glu = 105 + R() * 30;
+  if (did.has('fluid')) lac *= 0.75;
+  const sat = st.pulse ? (S.dv.spo2 ?? st.spo2 ?? 96) : null;
+  let po2 = v.po2;
+  if (po2 == null) {
+    if (sat == null) po2 = vent ? 55 + R() * 30 : 28 + R() * 12;
+    else if (sat >= 97 && (f.o2 || vent)) po2 = 110 + R() * (vent ? 220 : 120);
+    else { let a = 5, b = 700; for (let n = 0; n < 40; n++) { const m = (a + b) / 2; if (sev(m) * 100 < sat) a = m; else b = m; } po2 = a; }
+  }
+  const so2 = Math.min(99.6, sev(po2) * 100), cohb = 0.5 + R() * 0.6, methb = 0.3 + R() * 0.5, fo2hb = so2 * (100 - cohb - methb) / 100;
+  const hb = v.hb ?? 11.5 + R() * 2, na = v.na ?? 137 + R() * 3, k = v.k ?? 3.9 + R() * 0.5, ca = 1.14 + R() * 0.14;
+  const gap = 12 + (glu > 250 && hco3 < 18 ? 24 - hco3 : Math.max(0, lac - 1)), d = new Date(), z = n => String(n).padStart(2, '0');
+  ph += (R() - 0.5) * 0.008;
+  return { ph, pco2, po2, hco3, beB: 0.93 * (hco3 - 24.4 + 14.8 * (ph - 7.4)), beE: hco3 - 24.8 + 16.2 * (ph - 7.4), hct: hb * 2.94, hb, so2, fo2hb, cohb, methb, fhhb: 100 - fo2hb - cohb - methb,
+    na, k, ca, cl: na + k - hco3 - gap, gap, glu, lac, date: `${z(d.getDate())} . ${z(d.getMonth() + 1)} . ${d.getFullYear()}`, time: `${z(d.getHours())}:${z(d.getMinutes())}`,
+    pt: (!S.c.gen && (D_EN.CASES.find(x => x.id === S.c.id) || {}).age) || '', wt: S.c.wt };
+}
+function gasPrint() {
+  const g = S && S.gas; if (!g) return;
+  const row = (n, x, dp, u, r) => `<div class="gr"><span>${n}</span><b>${x.toFixed(dp)}<i>${r ? (x < r[0] ? '\u2193' : x > r[1] ? '\u2191' : '') : ''}</i></b><em>${u}</em></div>`;
+  const m = modal(`<div class="sheet gasp" role="dialog" aria-modal="true"><div class="paper" dir="ltr" lang="en">
+    <div class="gh"><b>ARTERIAL SAMPLE</b><span>${g.date}</span><span>${g.time}</span><span>System Name</span><span>RESUS BAY</span><span>Patient</span><span>${esc(g.pt)}${g.pt ? ' \u00b7 ' : ''}${g.wt} kg</span></div>
+    <h4>ACID/BASE 37.0 \u00b0C</h4>${row('pH', g.ph, 3, '', [7.35, 7.45])}${row('pCO\u2082', g.pco2, 1, 'mmHg', [35, 45])}${row('pO\u2082', g.po2, 1, 'mmHg', [80, 108])}${row('HCO\u2083\u207b act', g.hco3, 1, 'mmol/L', [22, 26])}${row('BE(B)', g.beB, 1, 'mmol/L', [-2, 2])}${row('BE(ecf)', g.beE, 1, 'mmol/L', [-2, 2])}
+    <h4>CO-OXIMETRY</h4>${row('Hct', g.hct, 0, '%', [33, 43])}${row('tHb', g.hb, 1, 'g/dL', [11, 14.5])}${row('sO\u2082', g.so2, 1, '%', [95, 100])}${row('FO\u2082Hb', g.fo2hb, 1, '%', [94, 99])}${row('FCOHb', g.cohb, 1, '%', [0, 1.5])}${row('FMetHb', g.methb, 1, '%', [0, 1.5])}${row('FHHb', g.fhhb, 1, '%', [0, 5])}
+    <h4>ELECTROLYTES</h4>${row('Na\u207a', g.na, 1, 'mmol/L', [135, 145])}${row('K\u207a', g.k, 2, 'mmol/L', [3.5, 5])}${row('Ca\u207a\u207a', g.ca, 2, 'mmol/L', [1.12, 1.32])}${row('Cl\u207b', g.cl, 0, 'mmol/L', [98, 107])}${row('AnGap', g.gap, 1, 'mmol/L', [8, 16])}
+    <h4>METABOLITES</h4>${row('Glu', g.glu, 0, 'mg/dL', [70, 140])}${row('Lac', g.lac, 2, 'mmol/L', [0.5, 2])}
+    <div class="gf">\u2191, \u2193 \u2013 Out of range</div></div>
+    <div class="row"><button class="btn" data-x>${esc(t('tut').close)}</button></div></div>`);
+  m.el.addEventListener('click', e => { if (e.target.closest('[data-x]') || e.target === m.el) m.close(); });
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-gas]')) gasPrint();
+  else if (e.target.closest('[data-gasdb]') && S) { if (!S.gas) S.gas = gasOf(); gasPrint(); }
+});
+/* the labs other than the gas (blood count, chemistry, markers), in the current language */
+function otherLabs() {
+  const en = gasItems('en'), loc = gasItems(LANG), same = en.length === loc.length;
+  const rest = en.map((x, i) => GAS_RE.some(([, re]) => re.test(x)) ? null : (same ? loc[i] : x)).filter(Boolean);
+  return rest.length ? rest.join(' \u00b7 ') : t('labsNone');
+}
+function labsSend(quiet) {
+  if (S.labsSent) { if (!quiet) { if (S.gas) gasPrint(); else { S.fb = { t: 'note', h: t('fbAlready'), m: t('labsWait') }; renderSitu(); } } return; }
+  const s0 = S, g = gasOf(); S.labsSent = true;
+  if (!quiet) { rec(actName('labs'), 'ok'); tlEv('labs', actName('labs')); Sound.click(true); S.fb = { t: 'note', h: t('fbFine'), m: t('labsSentM') }; renderSitu(); }
   setTimeout(() => {
     if (S !== s0 || S.finished) return;
-    S.labsBack = true; rec(`${t('labsH')}: ${res}`, 'ok'); toast(t('labsBackT'));
-    if (!S.busy && !S.modal) { S.fb = { t: 'note', h: t('labsH'), m: res }; renderSitu(); }
-  }, window.__fastEnd ? 800 : 25000);
+    S.gas = g; rec(`${t('gasH')}: pH ${g.ph.toFixed(2)} \u00b7 pCO\u2082 ${Math.round(g.pco2)} \u00b7 HCO\u2083 ${g.hco3.toFixed(1)} \u00b7 Lac ${g.lac.toFixed(1)}`, 'ok'); toast(t('gasBackT'));
+    const b = $('#gasBox'); if (b) b.hidden = false;
+    if (!S.busy && !S.modal) { S.fb = { t: 'note', h: t('gasH'), m: t('gasBackM'), gas: true }; renderSitu(); }
+  }, window.__fastEnd ? 800 : 30000);
+  setTimeout(() => {
+    if (S !== s0 || S.finished) return;
+    S.labsBack = true; const o = otherLabs(); rec(`${t('labsH')}: ${o}`, 'ok'); toast(t('labsBackT'));
+    if (!S.busy && !S.modal) { S.fb = { t: 'note', h: t('labsH'), m: o }; renderSitu(); }
+  }, window.__fastEnd ? 1500 : 120000);
 }
 function setTab(tab) {
   S.tab = tab;
@@ -1492,7 +1550,7 @@ function nextPhase() {
   dimCart(p.type === 'q');
   renderSitu();
 }
-function fbHTML(fb) { return `<div class="fb ${fb.t}"><b>${esc(fb.h)}</b><span>${esc(fb.m)}</span>${fb.inf ? `<span class="inf" style="--d:${fb.infMs}ms">${esc(fb.inf)}<i></i></span>` : ''}${fb.teach ? `<span class="teach">${esc(fb.teach)}</span>` : ''}</div>`; }
+function fbHTML(fb) { return `<div class="fb ${fb.t}"><b>${esc(fb.h)}</b><span>${esc(fb.m)}</span>${fb.gas ? `<span><button class="btn sm ghost" data-gas>${esc(t('gasView'))}</button></span>` : ''}${fb.inf ? `<span class="inf" style="--d:${fb.infMs}ms">${esc(fb.inf)}<i></i></span>` : ''}${fb.teach ? `<span class="teach">${esc(fb.teach)}</span>` : ''}</div>`; }
 function renderSitu() {
   const p = S.p, el = $('#situ'); if (!p || !el) return;
   const dots = S.lv < 3 && (p.type === 'act' || p.type === 'cycle') && p.need.length ? `<div class="needs" aria-label="${esc(t('actionsDone', S.done.size, p.need.length))}">${p.need.map((_, i) => `<i class="${S.done.has(i) ? 'done' : ''}"></i>`).join('')}</div>` : '';
@@ -1818,7 +1876,7 @@ function effects(id) {
   if (GIVEN_IDS.has(id)) S.given[id] = S.codeT;
   (S.did = S.did || new Set()).add(id);
   switch (id) {
-    case 'labs': S.labsSent = S.labsBack = true; break;
+    case 'labs': labsSend(true); break;
     case 'o2': f.o2 = true; break;
     case 'bvm': f.bvm = true; f.o2 = true; break;
     case 'check': if (S.m.cpr0 === null) S.m.recog = S.codeT; break;
@@ -2708,6 +2766,7 @@ function finish() {
     ${S.errs.length ? `<h3>${esc(t('whatFix'))}</h3><ul>${S.errs.map(e => `<li class="bad"><em>${esc(e.k)}</em> \u00b7 ${e.what ? `<b>${esc(e.what)}</b>: ` : ''}${esc(e.msg)}</li>`).join('')}</ul>` : `<h3>${esc(t('cleanRun'))}</h3><p class="muted">${esc(t('cleanSub'))}</p>`}
     ${metricsHTML(Q)}
     ${S.tl.seg.length || S.tl.ev.length ? timelineHTML() : ''}
+    ${S.labsSent ? `<h3>${esc(t('labsDbH'))}</h3><p class="muted">${esc(otherLabs())}</p><p><button class="btn sm ghost" data-gasdb>${esc(t('gasView'))}</button></p>` : ''}
     <h3>${esc(t('keyPoints'))}</h3><ul>${teach.map(x => `<li>${esc(x.t)}</li>`).join('')}</ul>
     ${weakT.length ? `<div class="weakchips"><span class="muted">${esc(t('weakTitle'))}:</span>${weakT.map(tp => `<span class="chip">${esc(TP[tp] || tp)}</span>`).join('')}<button class="btn sm" data-drill>${esc(t('drillThese'))}</button></div>` : ''}
     <div class="row"><button class="btn primary" data-again>${esc(t('again'))}</button>${c.surprise ? `<button class="btn" data-surprise>${esc(t('surpriseNext'))}</button>` : ''}<button class="btn" data-next>${esc(c.gen ? t('newRandom') : t('nextCase', nxt.title))}</button><button class="btn ghost" data-list>${esc(t('allCases'))}</button></div>

@@ -57,7 +57,7 @@ window.PALS = (() => {
     { id: 'fluid', g: 'line', n: 'Fluid bolus', s: 'Isotonic crystalloid' },
     { id: 'vaso', g: 'line', n: 'Vasoactive infusion', s: 'Epi / norepi drip' },
     { id: 'glucose', g: 'line', n: 'Check glucose', s: 'Point of care' },
-    { id: 'labs', g: 'line', n: 'Blood gas & labs', s: 'Results in about a minute' },
+    { id: 'labs', g: 'line', n: 'Blood gas & labs', s: 'Gas in ~30 s \u00b7 labs later' },
     { id: 'o2', g: 'air', n: 'Oxygen', s: 'High-flow / blow-by' },
     { id: 'suction', g: 'air', n: 'Suction', s: 'Max 10 s per pass' },
     { id: 'airway', g: 'air', n: 'Advanced airway', s: 'ETT / SGA + capno' },
