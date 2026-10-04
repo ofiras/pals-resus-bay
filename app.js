@@ -666,7 +666,56 @@ function tutorial() {
   ui();
 }
 document.addEventListener('click', e => { if (e.target.closest('[data-tut]')) tutorial(); });
-function go(name, arg) { cleanup(); CUR = { name, arg }; window.scrollTo(0, 0); if (name === 'home' && !Store.d.tutSeen && !/[?&]debug/.test(location.search)) setTimeout(() => { if (CUR.name === 'home' && !Store.d.tutSeen) tutorial(); }, 500); (SCREENS[name] || SCREENS.home)(arg); }
+/* The case-screen tour: a spotlight walks over the screen itself and says in one line what each part is for.
+   Runs by itself in the first case; the ? button in the case bar replays it. The case clock stands still meanwhile. */
+const TOUR_SEL = ['#mon', '#situ', '#pt', '#ptacts', '.stn-mon', '.drawers', '#tray', '.simbar .in'];
+function tour() {
+  if (!S || $('.tour')) return;
+  const T = t('tour'), steps = TOUR_SEL.map((sel, i) => ({ sel, txt: T.steps[i] })).filter(s => { const e = $(s.sel); return e && e.getClientRects().length; });
+  if (!steps.length) return;
+  let i = 0;
+  const el = document.createElement('div'); el.className = 'tour';
+  el.innerHTML = `<div class="tspot"></div><div class="tbub" role="dialog" aria-live="polite"><p></p><div class="trow"><span class="tn"></span><button class="btn ghost sm" data-x>${esc(T.skip)}</button><button class="btn primary sm" data-n></button></div></div>`;
+  document.body.appendChild(el);
+  const spot = $('.tspot', el), bub = $('.tbub', el);
+  const holder = { el, close: () => end() };
+  MODALS.add(holder); S.modal = true;
+  const place = () => {
+    const tg = $(steps[i].sel); if (!tg) return;
+    const r = tg.getBoundingClientRect(), pad = 6, vw = innerWidth, vh = innerHeight;
+    const L = Math.max(4, r.left - pad), T0 = Math.max(4, r.top - pad), R = Math.min(vw - 4, r.right + pad), B = Math.min(vh - 4, r.bottom + pad);
+    Object.assign(spot.style, { left: L + 'px', top: T0 + 'px', width: Math.max(0, R - L) + 'px', height: Math.max(0, B - T0) + 'px' });
+    const bw = bub.offsetWidth, bh = bub.offsetHeight;
+    let top = B + 10;
+    if (top + bh > vh - 8) top = T0 - 10 - bh;
+    if (top < 8) top = Math.min(vh - bh - 8, Math.max(8, T0 + 12));
+    bub.style.top = top + 'px'; bub.style.left = Math.max(12, Math.min(vw - bw - 12, (L + R) / 2 - bw / 2)) + 'px';
+  };
+  const show = () => {
+    if (steps[i].sel === '#tray') setTab('drug');
+    const tg = $(steps[i].sel);
+    if (tg && steps[i].sel !== '.simbar .in') tg.scrollIntoView({ block: 'center', behavior: 'instant' });
+    $('p', bub).textContent = steps[i].txt;
+    bidiRuns($('p', bub));
+    $('.tn', bub).textContent = `${i + 1} / ${steps.length}`;
+    $('[data-n]', bub).textContent = i === steps.length - 1 ? T.done : T.next;
+    place(); setTimeout(place, 80);
+  };
+  const next = () => { if (i < steps.length - 1) { i++; show(); } else end(); };
+  const kh = e => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); next(); } };
+  function end() {
+    if (!el.isConnected) return;
+    el.remove(); MODALS.delete(holder); if (S) { S.modal = MODALS.size > 0; setTab('mon'); }
+    removeEventListener('scroll', place, true); removeEventListener('resize', place); document.removeEventListener('keydown', kh, true);
+    Store.d.tourSeen = true; Store.save();
+  }
+  el.addEventListener('click', e => { if (e.target.closest('[data-n]')) next(); else if (e.target.closest('[data-x]')) end(); });
+  addEventListener('scroll', place, true); addEventListener('resize', place); document.addEventListener('keydown', kh, true);
+  cleanups.push(end);
+  show();
+  setTimeout(() => { const b = $('[data-n]', bub); if (b) b.focus({ preventScroll: true }); }, 30);
+}
+function go(name, arg) { cleanup(); CUR = { name, arg }; window.scrollTo(0, 0); (SCREENS[name] || SCREENS.home)(arg); }
 function modal(html) {
   const el = document.createElement('div'); el.className = 'scrim'; el.innerHTML = html; document.body.appendChild(el);
   const m = { el, close() { el.remove(); MODALS.delete(m); if (S) S.modal = MODALS.size > 0; } };
@@ -903,6 +952,7 @@ function simScreen(arg) {
       <div class="clock"><small>${esc(t('code'))}</small><b id="clk">00:00</b></div>
       <div class="clock"><small>${esc(t('score'))}</small><b id="scr">0</b></div>
       <button class="iconbtn" data-snd aria-label="${esc(t('sound'))}">${Store.d.sound ? IC.snd : IC.mute}</button>
+      <button class="iconbtn" data-tour aria-label="${esc(t('tour').aria)}" title="${esc(t('tour').aria)}">?</button>
       <button class="iconbtn" data-report aria-label="${esc(t('reportAria'))}">${IC.flag}</button>
     </div>
     <div class="mstrip" id="mstrip" aria-hidden="true">
@@ -986,6 +1036,7 @@ function simScreen(arg) {
     if (e.target.closest('#ff')) endCycle();
   });
   if ($('#peek')) $('#peek').addEventListener('click', peek);
+  $('[data-tour]').addEventListener('click', () => { if (S && S.started && !S.finished && !S.modal) tour(); });
   $('#mon').title = t('monTap');
   /* tapping the monitor prints a strip; with a pulse that is the same as asking for a 12-lead */
   $('#cv').addEventListener('click', () => { if (S && S.started && !S.finished && !S.modal && S.st.monitor) { if (S.st.pulse && S.p && !S.busy && S.p.type !== 'q' && S.p.type !== 'end') doAction('ecg12'); else ecgPrint(); } });
@@ -1346,7 +1397,10 @@ function showBrief() {
   </div>`);
   m.el.addEventListener('click', e => {
     const wb = e.target.closest('[data-wt]'); if (wb && !wb.disabled) { wtAnswer(+wb.dataset.wt, m, wb); return; }
-    if (e.target.closest('[data-start]') && !S.hideWt) { m.close(); Sound.ensure(); S.started = true; S.lastTick = performance.now(); nextPhase(); }
+    if (e.target.closest('[data-start]') && !S.hideWt) {
+      m.close(); Sound.ensure(); S.started = true; S.lastTick = performance.now(); nextPhase();
+      if (!Store.d.tourSeen && !/[?&]debug/.test(location.search)) setTimeout(() => { if (S && !S.finished && !S.modal) tour(); }, 450);
+    }
     else if (e.target.closest('[data-go]')) go('cases');
   });
   const f = $('form.wtform', m.el);

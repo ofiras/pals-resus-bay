@@ -451,7 +451,13 @@ p{margin:0}
 .fb .inf i{display:block;height:4px;margin-top:4px;border-radius:2px;background:currentColor;transform-origin:left;animation:infrun var(--d,3s) linear both}
 [dir=rtl] .fb .inf i{transform-origin:right}
 @keyframes infrun{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-.iconbtn[data-tut]{font:800 18px var(--display)}
+.iconbtn[data-tut],.iconbtn[data-tour]{font:800 18px var(--display)}
+.tour{position:fixed;inset:0;z-index:9000}
+.tspot{position:fixed;border-radius:12px;box-shadow:0 0 0 200vmax rgba(2,8,12,.74);outline:2px solid var(--accent);outline-offset:0;pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
+.tbub{position:fixed;width:min(330px,calc(100vw - 24px));background:#10232c;border:1px solid var(--accent);border-radius:14px;padding:12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.55);transition:top .25s,left .25s}
+.tbub p{margin:0 0 10px;line-height:1.45;font-size:14.5px}
+.tbub .trow{display:flex;gap:8px;align-items:center}
+.tbub .tn{margin-inline-end:auto;font:600 12px var(--mono);opacity:.7}
 .tut h2{margin:.2em 0 .5em}
 .tut p{margin:.45em 0;line-height:1.5}
 .tut .tutvis{display:flex;justify-content:center;margin:6px 0 10px}
