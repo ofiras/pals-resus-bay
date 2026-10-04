@@ -2311,7 +2311,8 @@ const REAL_ITEMS = {
     { bad: 'd5w', kind: 'bag', cap: '#ffd23f', name: '5% DEXTROSE', conc: 'D5W', pack: '500 mL' },
     { act: 'dextrose', kind: 'bag', cap: '#ff8a2a', name: '10% DEXTROSE', conc: 'D10W \u00b7 100 mg/mL', pack: '250 mL' },
     { act: 'vaso', kind: 'pump', name: 'INFUSION PUMP', conc: 'vasoactive drip', pack: '' },
-    { act: 'glucose', kind: 'gluco', name: 'GLUCOMETER', conc: 'point of care', pack: '' }
+    { act: 'glucose', kind: 'gluco', name: 'GLUCOMETER', conc: 'point of care', pack: '' },
+    { act: 'labs', kind: 'tubes', name: 'BLOOD TUBES', conc: 'gas \u00b7 chem \u00b7 CBC', pack: '' }
   ],
   air: [
     { act: 'o2', kind: 'nrb', name: 'NON-REBREATHER', conc: 'O\u2082 10-15 L/min', pack: 'pediatric mask' },
@@ -2338,6 +2339,7 @@ function itemSVG(it) {
     case 'ett': return `<svg viewBox="0 0 60 80"><path d="M10 10h10v8l14 40" stroke="#9aa7ad" stroke-width="5" fill="none" stroke-linejoin="round"/><circle cx="34" cy="60" r="2" fill="#ffd84a"/><path d="M44 6v52a10 10 0 0 0 10 10" stroke="#e8f6ff" stroke-width="4" fill="none"/><ellipse cx="46" cy="62" rx="4" ry="2.5" fill="rgba(140,200,255,.6)"/><rect x="41" y="2" width="6" height="6" rx="1" fill="#f3f6f7"/></svg>`;
     case 'neb': return `<svg viewBox="0 0 60 80"><path d="M18 40h24l-4 26H22z" fill="rgba(210,235,245,.3)" stroke="#d6eef8"/><path d="M20 54h20" stroke="${cap}" stroke-width="5" opacity=".8"/><path d="M30 40V28M24 28h12" stroke="#d6eef8" stroke-width="2"/><path d="M22 20c3 3 5 3 8 0s5-3 8 0M24 12c2 2 4 2 6 0s4-2 6 0" stroke="#cfe5ff" stroke-width="1.4" fill="none"/><path d="M30 66v10" stroke="#a6f0c6" stroke-width="2"/></svg>`;
     case 'cath': return `<svg viewBox="0 0 60 80"><path d="M30 4v34" stroke="#c7d3d8" stroke-width="1.6"/><path d="M26 38h8v8h-8z" fill="#ff8a2a"/><path d="M24 46h12l-1 14H25z" fill="rgba(210,235,245,.4)" stroke="#d6eef8"/><path d="M27 60h6v16h-6z" fill="#ff8a2a"/></svg>`;
+    case 'tubes': return `<svg viewBox="0 0 60 80">${[['#7d8f98', 10], ['#a85cff', 24], ['#e0303f', 38]].map(([c, x]) => `<rect x="${x}" y="8" width="12" height="9" rx="2" fill="${c}"/><path d="M${x + 1} 17h10v46a5 5 0 0 1-10 0z" fill="rgba(210,235,245,.3)" stroke="#d6eef8"/><path d="M${x + 1} 40h10v23a5 5 0 0 1-10 0z" fill="#9e1f2c"/><rect x="${x + 1}" y="24" width="10" height="12" fill="#f3f6f7"/>`).join('')}</svg>`;
   }
   return '';
 }
