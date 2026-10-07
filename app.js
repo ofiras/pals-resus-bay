@@ -1577,6 +1577,8 @@ function renderSitu() {
   const keepTb = $('#tb', el), w0 = keepTb && keepTb.style.width;
   el.innerHTML = h;
   if (w0 && p.type !== 'cycle' && $('#tb', el)) $('#tb', el).style.width = w0;
+  /* a tall card (the post-ROSC board, long feedback) would cover the cart if it stayed pinned: let it scroll away */
+  el.classList.remove('tall'); const con = el.closest('.console'); if (el.offsetHeight > (con && con.clientHeight < innerHeight ? con.clientHeight : innerHeight) * 0.4) el.classList.add('tall');
   if (window.innerWidth <= 980) { const top = el.getBoundingClientRect().top; if (top < 60 || top > window.innerHeight * 0.75) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
   stripUpd();
 }
