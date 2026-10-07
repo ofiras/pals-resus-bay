@@ -2136,6 +2136,9 @@ function postInit() {
   };
   S.st.cpr = false;
   postApply();
+  /* the cuff starts a fresh reading for the board, so the number on screen is the pressure the board judges, not one from before ROSC */
+  S.dv.sbp = S.post.sbp; S.dv.dbp = Math.round(S.post.sbp * 0.56); S.nbp.v = null; S.nbp.at = '';
+  if (S.st.monitor && !S.nbp.busy) nbpStart();
 }
 const postSpo2 = () => S.post.curve[S.post.fi];
 const postCo2 = () => Math.round(40 * S.post.nr / S.post.rate);
@@ -2192,7 +2195,8 @@ function postAct(id) {
       if (!r || !S || !S.p || S.p.type !== 'post') return;
       P.bol++;
       if (P.sbp >= P.lo) { err(t('pfFluidNo'), false, id, actName(id), 15, t('notNow'), 'rosc'); return; }
-      P.sbp += P.refr ? 3 : 9; ok(P.sbp >= P.lo ? t('pfFluidOk') : t('pfFluidMore'), r);
+      /* keep clear of the limit, so the cuff's reading noise cannot show a pass for a fail or the other way round */
+      P.sbp += P.refr ? 3 : 9; P.sbp = P.sbp >= P.lo ? Math.max(P.sbp, P.lo + 5) : Math.min(P.sbp, P.lo - 5); ok(P.sbp >= P.lo ? t('pfFluidOk') : t('pfFluidMore'), r);
     });
     return;
   }
@@ -2217,7 +2221,7 @@ function postAct(id) {
 function postDone() {
   const p = S.p, bad = postRows().filter(r => !r.ok), MS = t('pfMiss');
   S.busy = true;
-  bad.forEach(r => { S.score -= 20; S.weak.add('rosc'); S.errs.push({ k: p.k, msg: MS[r.id], what: `${r.l}: ${r.v}` }); rec(`\u2717 ${r.l}: ${r.v}`, 'bad'); tlEv('err', r.l); });
+  bad.forEach(r => { S.score -= 20; S.weak.add('rosc'); S.errs.push({ k: p.k, msg: MS[r.id], what: `${r.l}: ${r.mv}` }); rec(`\u2717 ${r.l}: ${r.mv}`, 'bad'); tlEv('err', r.l); });
   scorePhase(); updScore();
   rec(t('pfGoRec'), bad.length ? 'bad' : 'ok');
   const teach = t('postTeach'); S.teach.push({ k: p.k, t: teach });
