@@ -189,6 +189,7 @@ window.PALS_I18N = (() => {
       ACTIONS: E.ACTIONS.map(e => Object.assign({}, M.ACTIONS.find(h => h.id === e.id) || e, { g: e.g })), GROUPS: E.GROUPS.map(g => Object.assign({}, g, ((window.PALS_I18N_ADD || {}).heGroups || {})[g.id] || {})), OK_TEXT: M.OK_TEXT, WHY: M.WHY, GENERIC_WHY: M.GENERIC_WHY, HTS: M.HTS,
       CASES: (() => { const all = [...P.cases1, ...P.cases2, ...P.cases3, ...(P.cases4 || [])]; return E.CASES.map(c => all.find(x => x.id === c.id) || c); })(), ALGOS: P.ALGOS, RUSH: P.RUSH,
       PATIENTS: M.PATIENTS, VITALS: M.VITALS,
+      EXAM: (E.EXAM || []).map(e => { const h = (P.EXAM || []).find(x => x.id === e.id); return h ? Object.assign({}, e, h, { ctx: e.ctx && Object.assign({}, e.ctx, h.ctx) }) : e; }),
       CARDS: E.CARDS.map((ec, i) => { const h = P.CARDS[i]; return h ? { id: ec.id, c: h[0], q: h[1], a: h[2] } : ec; })
     }), {
       DOSE: deepFix(M.DOSE), DRILL: deepFix(M.DRILL), DRILL_AGE: deepFix(M.DRILL_AGE),

@@ -3293,7 +3293,9 @@ function examScreen() {
   cleanups.push(() => { clearInterval(timer); stopMon(); });
   const shufOpts = os => shuffle(os.map(o => ({ t: o.t, ok: !!o.ok, why: o.why || '' })));
   function build() {
-    const caseQs = shuffle(D.CASES.flatMap(c => c.phases.map((p, pi) => p.type !== 'q' ? null : ({ topic: c.algo, ctx: ctxOf(c.age, c.wt), say: p.say, q: p.q, opts: shufOpts(p.opts), teach: p.teach || '', st: examState(c, pi) })).filter(Boolean))).slice(0, 11);
+    /* 11 questions from the written-exam bank, no more than two on one topic */
+    const per = {}, caseQs = shuffle(D.EXAM || []).filter(e => (per[e.topic] = (per[e.topic] || 0) + 1) <= 2).slice(0, 11)
+      .map(e => ({ topic: e.topic, ctx: e.ctx ? ctxOf(e.ctx.age, e.ctx.wt) : '', say: e.say, q: e.q, opts: shufOpts(e.opts), teach: e.teach || '', st: e.mon ? Object.assign({ monitor: true, cpr: false }, e.mon) : null }));
     const names = [...new Set(D.RUSH.map(x => x.a))], rush = shuffle(D.RUSH);
     const rhy = rush.slice(0, 4).map(it => ({ topic: 'rhythm', strip: it, ctx: `${it.ctx} \u00b7 ${it.p ? t('pulseYes') : t('pulseNo')}`, say: '', q: t('nameRhythm'), opts: shuffle([it.a, ...shuffle(names.filter(n => n !== it.a)).slice(0, 3)]).map(n => ({ t: n, ok: n === it.a, why: '' })), teach: `${it.a}: ${it.f}` }));
     const nxt = rush.slice(4, 6).map(it => ({ topic: 'rhythm', strip: it, ctx: `${it.ctx} \u00b7 ${it.a}`, say: '', q: it.nx.q, opts: shuffle([it.nx.ok, ...it.nx.bad]).map(n => ({ t: n, ok: n === it.nx.ok, why: '' })), teach: `${it.a}: ${it.f}` }));
@@ -3315,7 +3317,7 @@ function examScreen() {
     box.innerHTML = `<div class="hud"><span>${esc(t('question'))} <b>${i + 1}</b>/${N}</span><span class="exclock">${esc(t('timeLeft'))} <b id="exT">${mmss(LIMIT - (performance.now() - t0) / 1000)}</b></span></div>
       <div class="timebar"><i style="width:${i / N * 100}%"></i></div>
       ${q.strip || (q.st && q.st.monitor) ? `<div class="rushmon"><canvas id="ecv"></canvas></div>` : ''}${q.st && q.st.monitor ? (() => { const s = q.st, fl = ['vf', 'torsades'].includes(s.rhythm), hr = fl ? '---' : s.rhythm === 'asystole' ? '0' : s.hr; return `<div class="exvit" dir="ltr"><span style="--vc:var(--ecg)">HR <b>${hr ?? '--'}</b></span><span style="--vc:var(--spo2)">SpO\u2082 <b>${s.pulse && s.spo2 ? s.spo2 : '--'}</b></span><span style="--vc:var(--bp)">NBP <b>${s.pulse && s.bp ? s.bp : '--'}</b></span><span style="--vc:var(--rr)">RR <b>${s.pulse && s.rr != null && !s.cpr ? s.rr : '--'}</b></span></div>`; })() : ''}
-      <div class="qbox"><div class="exctx"><span class="chip">${esc(q.ctx)}</span></div>${q.say ? `<p class="say">${esc(q.say)}</p>` : ''}<div class="qtext">${esc(q.q)}</div>
+      <div class="qbox">${q.ctx ? `<div class="exctx"><span class="chip">${esc(q.ctx)}</span></div>` : ''}${q.say ? `<p class="say">${esc(q.say)}</p>` : ''}<div class="qtext">${esc(q.q)}</div>
       <div class="opts">${q.opts.map((o, k) => `<button class="opt" data-o="${k}">${kbd(k + 1)}${esc(o.t)}</button>`).join('')}</div></div>`;
     if (q.strip) { mon = new Monitor($('#ecv'), { sweep: 5 }); mon.set({ monitor: true, rhythm: q.strip.r, hr: q.strip.hr || 60, pulse: q.strip.p, cpr: false }); }
     else if (q.st && q.st.monitor) { const s = q.st; mon = new Monitor($('#ecv'), { sweep: 5 }); mon.set({ monitor: true, rhythm: s.rhythm, hr: s.hr || 60, pulse: s.pulse, cpr: !!s.cpr }); }
@@ -3331,7 +3333,7 @@ function examScreen() {
     const TP = t('topics');
     box.innerHTML = `<div class="result"><div class="eyebrow">${esc(isBest ? t('newBest') : t('examDone'))}</div><div class="big ${pass ? 'pass' : 'fail'}">${pct}%</div><p><b>${esc(pass ? t('examPass') : t('examFail'))}</b></p><p class="muted">${esc(t('examRes', right, N, right * 4))}</p></div>
       <h3 class="exh">${esc(t('byTopic'))}</h3><div class="topics">${Object.entries(byT).sort((x, y) => x[1][0] / x[1][1] - y[1][0] / y[1][1]).map(([tp, [r, n]]) => `<div class="tp"><span>${esc(TP[tp] || tp)}</span><span class="wbar ${r === n ? 'full' : ''}"><i style="width:${Math.round(r / n * 100)}%"></i></span><b>${r}/${n}</b></div>`).join('')}</div>
-      ${res.some(r => !r.ok) ? `<h3 class="exh">${esc(t('reviewWrong'))}</h3><ol class="review">${res.filter(r => !r.ok).map(r => { const c = r.q.opts.find(o => o.ok), y = r.a !== undefined ? r.q.opts[r.a] : null; return `<li><div class="rq"><span class="chip">${esc(r.q.ctx)}</span> ${r.q.say ? esc(r.q.say) + ' ' : ''}<b>${esc(r.q.q)}</b></div><div class="ry">\u2717 ${y ? esc(y.t) + (y.why ? ` <small>${esc(y.why)}</small>` : '') : esc(t('noAnswer'))}</div><div class="rc">\u2713 ${esc(c.t)}</div>${r.q.teach ? `<small class="muted">${esc(r.q.teach)}</small>` : ''}</li>`; }).join('')}</ol>` : ''}
+      ${res.some(r => !r.ok) ? `<h3 class="exh">${esc(t('reviewWrong'))}</h3><ol class="review">${res.filter(r => !r.ok).map(r => { const c = r.q.opts.find(o => o.ok), y = r.a !== undefined ? r.q.opts[r.a] : null; return `<li><div class="rq">${r.q.ctx ? `<span class="chip">${esc(r.q.ctx)}</span> ` : ''}${r.q.say ? esc(r.q.say) + ' ' : ''}<b>${esc(r.q.q)}</b></div><div class="ry">\u2717 ${y ? esc(y.t) + (y.why ? ` <small>${esc(y.why)}</small>` : '') : esc(t('noAnswer'))}</div><div class="rc">\u2713 ${esc(c.t)}</div>${r.q.teach ? `<small class="muted">${esc(r.q.teach)}</small>` : ''}</li>`; }).join('')}</ol>` : ''}
       <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn primary" data-retake>${esc(t('retake'))}</button>${wrongT.length ? `<button class="btn" data-go="recall" data-arg="weak:${wrongT.join(',')}">${esc(t('drillWeak'))}</button>` : ''}<button class="btn ghost" data-go="home">${esc(t('home'))}</button></div>`;
     window.scrollTo(0, 0);
   }
