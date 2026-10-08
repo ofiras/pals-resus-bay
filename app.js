@@ -3267,6 +3267,23 @@ function recallScreen(arg) {
 }
 
 /* ---------------- EXAM ---------------- */
+/* What the monitor shows at question i of a case: the case's start, every step before it done as scripted, then the question's own setting. */
+function examState(c, i) {
+  const st = Object.assign({ monitor: false, rhythm: 'nsr', hr: 100, pulse: true, spo2: null, rr: null, bp: null, cpr: false }, c.init);
+  const leads = !!(c.flags && (c.flags.leads || c.flags.pads));
+  if (leads) st.monitor = true;
+  c.phases.slice(0, i).forEach(p => {
+    if (p.set) Object.assign(st, p.set);
+    if (p.type === 'cycle' && (!p.set || p.set.cpr === undefined)) st.cpr = true;
+    (p.need || []).flat().forEach(a => { if (a === 'pads' || a === 'leads') st.monitor = true; if (a === 'cpr') st.cpr = true; if (a === 'rhythm') st.cpr = false; });
+    if (p.after) Object.assign(st, p.after);
+  });
+  if (c.phases[i].set) Object.assign(st, c.phases[i].set);
+  if (/monitor|\u05de\u05d5\u05e0\u05d9\u05d8\u05d5\u05e8/i.test(c.phases[i].say + ' ' + c.phases[i].q)) st.monitor = true;
+  return st;
+}
+/* age and weight as separate isolated runs, so Hebrew text and numbers do not swap places */
+const ctxOf = (age, w) => `\u2068${age}\u2069 \u00b7 \u2068${w} ${t('kg')}\u2069`;
 function examScreen() {
   const N = 25, LIMIT = 20 * 60;
   app.innerHTML = `<div class="shell">${secHead(t('examTitle'), t('examSub'))}<div class="game" id="ex"></div></div>`;
@@ -3276,11 +3293,11 @@ function examScreen() {
   cleanups.push(() => { clearInterval(timer); stopMon(); });
   const shufOpts = os => shuffle(os.map(o => ({ t: o.t, ok: !!o.ok, why: o.why || '' })));
   function build() {
-    const caseQs = shuffle(D.CASES.flatMap(c => c.phases.filter(p => p.type === 'q').map(p => ({ topic: c.algo, ctx: `${c.age} \u00b7 ${c.wt} ${t('kg')}`, say: p.say, q: p.q, opts: shufOpts(p.opts), teach: p.teach || '' })))).slice(0, 11);
+    const caseQs = shuffle(D.CASES.flatMap(c => c.phases.map((p, pi) => p.type !== 'q' ? null : ({ topic: c.algo, ctx: ctxOf(c.age, c.wt), say: p.say, q: p.q, opts: shufOpts(p.opts), teach: p.teach || '', st: examState(c, pi) })).filter(Boolean))).slice(0, 11);
     const names = [...new Set(D.RUSH.map(x => x.a))], rush = shuffle(D.RUSH);
     const rhy = rush.slice(0, 4).map(it => ({ topic: 'rhythm', strip: it, ctx: `${it.ctx} \u00b7 ${it.p ? t('pulseYes') : t('pulseNo')}`, say: '', q: t('nameRhythm'), opts: shuffle([it.a, ...shuffle(names.filter(n => n !== it.a)).slice(0, 3)]).map(n => ({ t: n, ok: n === it.a, why: '' })), teach: `${it.a}: ${it.f}` }));
     const nxt = rush.slice(4, 6).map(it => ({ topic: 'rhythm', strip: it, ctx: `${it.ctx} \u00b7 ${it.a}`, say: '', q: it.nx.q, opts: shuffle([it.nx.ok, ...it.nx.bad]).map(n => ({ t: n, ok: n === it.nx.ok, why: '' })), teach: `${it.a}: ${it.f}` }));
-    const dose = shuffle(Object.keys(D.DOSE)).slice(0, 8).map(k => { const pt = pick(D.PATIENTS), d = D.DOSE[k](pt.w); return { topic: DOSE_TOPIC[k] || 'doses', ctx: `${pt.age} \u00b7 ${pt.w} ${t('kg')}`, say: '', q: d.title, opts: shufOpts(d.opts), teach: `${t('rule')}: ${d.rule}` }; });
+    const dose = shuffle(Object.keys(D.DOSE)).slice(0, 8).map(k => { const pt = pick(D.PATIENTS), d = D.DOSE[k](pt.w); return { topic: DOSE_TOPIC[k] || 'doses', ctx: ctxOf(pt.age, pt.w), say: '', q: d.title, opts: shufOpts(d.opts), teach: `${t('rule')}: ${d.rule}` }; });
     return shuffle([...caseQs, ...rhy, ...nxt, ...dose]).slice(0, N);
   }
   function intro() {
@@ -3297,10 +3314,11 @@ function examScreen() {
     const q = qs[i]; stopMon();
     box.innerHTML = `<div class="hud"><span>${esc(t('question'))} <b>${i + 1}</b>/${N}</span><span class="exclock">${esc(t('timeLeft'))} <b id="exT">${mmss(LIMIT - (performance.now() - t0) / 1000)}</b></span></div>
       <div class="timebar"><i style="width:${i / N * 100}%"></i></div>
-      ${q.strip ? `<div class="rushmon"><canvas id="ecv"></canvas></div>` : ''}
+      ${q.strip || (q.st && q.st.monitor) ? `<div class="rushmon"><canvas id="ecv"></canvas></div>` : ''}${q.st && q.st.monitor ? (() => { const s = q.st, fl = ['vf', 'torsades'].includes(s.rhythm), hr = fl ? '---' : s.rhythm === 'asystole' ? '0' : s.hr; return `<div class="exvit" dir="ltr"><span style="--vc:var(--ecg)">HR <b>${hr ?? '--'}</b></span><span style="--vc:var(--spo2)">SpO\u2082 <b>${s.pulse && s.spo2 ? s.spo2 : '--'}</b></span><span style="--vc:var(--bp)">NBP <b>${s.pulse && s.bp ? s.bp : '--'}</b></span><span style="--vc:var(--rr)">RR <b>${s.pulse && s.rr != null && !s.cpr ? s.rr : '--'}</b></span></div>`; })() : ''}
       <div class="qbox"><div class="exctx"><span class="chip">${esc(q.ctx)}</span></div>${q.say ? `<p class="say">${esc(q.say)}</p>` : ''}<div class="qtext">${esc(q.q)}</div>
       <div class="opts">${q.opts.map((o, k) => `<button class="opt" data-o="${k}">${kbd(k + 1)}${esc(o.t)}</button>`).join('')}</div></div>`;
     if (q.strip) { mon = new Monitor($('#ecv'), { sweep: 5 }); mon.set({ monitor: true, rhythm: q.strip.r, hr: q.strip.hr || 60, pulse: q.strip.p, cpr: false }); }
+    else if (q.st && q.st.monitor) { const s = q.st; mon = new Monitor($('#ecv'), { sweep: 5 }); mon.set({ monitor: true, rhythm: s.rhythm, hr: s.hr || 60, pulse: s.pulse, cpr: !!s.cpr }); }
   }
   function end() {
     over = true; clearInterval(timer); stopMon();
