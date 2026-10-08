@@ -1575,11 +1575,14 @@ function renderSitu() {
   const sim = $('.sim'); if (sim) { sim.classList.toggle('field', !!S.c.field); sim.classList.toggle('aed', !!S.c.field && aedHere()); }
   updAvail();
   const keepTb = $('#tb', el), w0 = keepTb && keepTb.style.width;
+  /* the post-ROSC board is brought into view once; after that, adjusting its controls must not move the page */
+  const noJump = p.type === 'post' && S.postSeen === S.i, con = el.closest('.console');
+  if (p.type === 'post') S.postSeen = S.i;
   el.innerHTML = h;
   if (w0 && p.type !== 'cycle' && $('#tb', el)) $('#tb', el).style.width = w0;
   /* a tall card (the post-ROSC board, long feedback) would cover the cart if it stayed pinned: let it scroll away */
-  el.classList.remove('tall'); const con = el.closest('.console'); if (el.offsetHeight > (con && con.clientHeight < innerHeight ? con.clientHeight : innerHeight) * 0.4) el.classList.add('tall');
-  if (window.innerWidth <= 980) { const top = el.getBoundingClientRect().top; if (top < 60 || top > window.innerHeight * 0.75) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+  el.classList.remove('tall'); if (el.offsetHeight > (con && con.clientHeight < innerHeight ? con.clientHeight : innerHeight) * 0.4) el.classList.add('tall');
+  if (window.innerWidth <= 980 && !noJump) { const top = el.getBoundingClientRect().top; if (top < 60 || top > window.innerHeight * 0.75) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
   stripUpd();
 }
 /* Phones: show the vitals once the monitor scrolls away, and the instruction once the situation card does. */
@@ -2184,7 +2187,10 @@ function postCtl(c) {
     else S.fb = { t: 'note', h: t('fbFine'), m: t('pfNoFever') };
   } else if (k === 'go') { postDone(); return; }
   else if (k === 'nbp') { if (S.st.monitor && !S.nbp.busy) { Sound.ensure(); nbpStart(); postLive(); } return; }
-  postApply(); renderSitu();
+  postApply();
+  /* FiO2 and rate only redraw the board itself, so the page does not shift under the learner's finger */
+  const b = $('#situ .postb');
+  if ((k === 'fio2' || k === 'rate') && b) b.outerHTML = postHTML(); else renderSitu();
 }
 /* Cart actions while stabilizing after ROSC. */
 function postAct(id) {
