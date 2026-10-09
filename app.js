@@ -715,7 +715,23 @@ function tour() {
   show();
   setTimeout(() => { const b = $('[data-n]', bub); if (b) b.focus({ preventScroll: true }); }, 30);
 }
-function go(name, arg) { cleanup(); CUR = { name, arg }; window.scrollTo(0, 0); (SCREENS[name] || SCREENS.home)(arg); }
+/* Usage counts, only on the public copy (ofiras.github.io): anonymous totals kept by a free counter service (abacus).
+   No cookies, no IDs, nothing about the person: each event just adds 1 to a named counter. Dashboard: stats.html. */
+const STATS_NS = 'ofiras-pals-resus-bay', STATS_ON = /github\.io$/.test(location.hostname) && !/[?&]debug/.test(location.search);
+const statDay = () => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
+function hit(key) {
+  if (!STATS_ON) return;
+  try { fetch(`https://abacus.jasoncameron.dev/hit/${STATS_NS}/${key}`, { keepalive: true }).catch(() => {}); } catch (e) { /* offline: not counted */ }
+}
+function countVisit() {
+  if (!STATS_ON) return;
+  const day = statDay(), ls = k => { try { return localStorage.getItem(k); } catch (e) { return '1'; } }, set = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } };
+  hit('visits');
+  if (!ls('pals-st-seen')) { set('pals-st-seen', '1'); hit('visitors'); hit('n-' + day); }
+  if (ls('pals-st-day') !== day) { set('pals-st-day', day); hit('u-' + day); hit('lang-' + LANG); hit('dev-' + (innerWidth <= 640 ? 'phone' : innerWidth <= 1024 ? 'tablet' : 'desktop')); }
+}
+const STAT_MODES = ['random', 'sprint', 'atlas', 'algo', 'rush', 'drill', 'cpr', 'recall', 'card', 'exam', 'live'];
+function go(name, arg) { cleanup(); CUR = { name, arg }; if (STAT_MODES.includes(name)) hit('m-' + name); window.scrollTo(0, 0); (SCREENS[name] || SCREENS.home)(arg); }
 function modal(html) {
   const el = document.createElement('div'); el.className = 'scrim'; el.innerHTML = html; document.body.appendChild(el);
   const m = { el, close() { el.remove(); MODALS.delete(m); if (S) S.modal = MODALS.size > 0; } };
@@ -1457,6 +1473,7 @@ function showBrief() {
     const wb = e.target.closest('[data-wt]'); if (wb && !wb.disabled) { wtAnswer(+wb.dataset.wt, m, wb); return; }
     if (e.target.closest('[data-start]') && !S.hideWt) {
       m.close(); Sound.ensure(); S.started = true; S.lastTick = performance.now(); nextPhase();
+      hit('cs-' + (S.c.gen ? 'gen-' + S.c.gen : S.c.id)); hit('lv-' + S.lv);
       if (!Store.d.tourSeen && !/[?&]debug/.test(location.search)) setTimeout(() => { if (S && !S.finished && !S.modal) tour(); }, 450);
     }
     else if (e.target.closest('[data-go]')) go('cases');
@@ -2746,6 +2763,7 @@ function peek() {
 function finish() {
   if (!S || S.finished) return;
   S.finished = true; S.busy = true;
+  hit('cd-' + (S.c.gen ? 'gen-' + S.c.gen : S.c.id)); if (S.died) hit('died');
   const c = S.c, pct = S.died ? 0 : S.max ? Math.max(0, Math.min(1, S.score / S.max)) : 1;
   const dangers = S.errs.filter(e => e.danger).length;
   let stars = pct >= 0.9 ? 3 : pct >= 0.7 ? 2 : pct >= 0.4 ? 1 : 0;
@@ -3306,7 +3324,7 @@ function examScreen() {
     stopMon(); over = false;
     box.innerHTML = `<div class="result exintro"><div class="eyebrow">${esc(t('examEyebrow'))}</div><div class="big">${N}</div><ul class="how">${t('examRules').map(r => `<li>${esc(r)}</li>`).join('')}</ul><p class="muted">${esc(t('best'))}: ${Store.d.exam || 0}%</p><button class="btn primary" data-exgo>${esc(t('examStart'))}</button></div>`;
   }
-  function start() { qs = build(); i = 0; ans = []; over = false; t0 = performance.now(); clearInterval(timer); timer = setInterval(clock, 250); show(); }
+  function start() { hit('exam-start'); qs = build(); i = 0; ans = []; over = false; t0 = performance.now(); clearInterval(timer); timer = setInterval(clock, 250); show(); }
   function clock() {
     const left = LIMIT - (performance.now() - t0) / 1000, el = $('#exT');
     if (el) { el.textContent = mmss(left); el.parentElement.classList.toggle('late', left < 120); }
@@ -3326,6 +3344,7 @@ function examScreen() {
     over = true; clearInterval(timer); stopMon();
     const res = qs.map((q, k) => ({ q, a: ans[k], ok: ans[k] !== undefined && q.opts[ans[k]].ok }));
     const right = res.filter(r => r.ok).length, pct = Math.round(right / N * 100), pass = pct >= 84;
+    hit('exam-done'); if (pass) hit('exam-pass');
     const isBest = pct > (Store.d.exam || 0); Store.d.exam = Math.max(Store.d.exam || 0, pct);
     const byT = {}; res.forEach(r => { const b = byT[r.q.topic] = byT[r.q.topic] || [0, 0]; b[1]++; if (r.ok) b[0]++; });
     const wrongT = [...new Set(res.filter(r => !r.ok).map(r => r.q.topic))];
@@ -3614,6 +3633,7 @@ function codeCard() {
 }
 
 const SCREENS = { home, cases, sim: simScreen, sprint: sprintScreen, random: () => simScreen(surpriseCase()), gen: type => simScreen(genCase(type)), atlas, algo: algoScreen, rush: rushScreen, drill: drillScreen, cpr: cprScreen, recall: recallScreen, card: codeCard, exam: examScreen, live: liveScreen };
+countVisit();
 go('home');
 Sync.init();
 /* test hook for automated play-throughs (only with ?debug in the URL) */

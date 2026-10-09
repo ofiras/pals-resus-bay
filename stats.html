@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>PALS Resus Bay · Usage</title>
+<style>
+:root{--bg:#071117;--panel:#0e1f27;--line:#1d3a47;--fg:#e6f1f5;--mut:#8aa4ae;--acc:#ff8a4c;--a:#3ef08f;--b:#4fc3ff;--c:#c39bff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:16px;margin:26px 0 10px;color:var(--mut);font-weight:600;letter-spacing:.02em}
+.sub{color:var(--mut);margin:0 0 16px;font-size:13.5px}
+.prog{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:18px}.prog i{display:block;height:100%;background:var(--acc);width:0;transition:width .3s}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tile small{display:block;color:var(--mut);font-size:12px}.tile b{font-size:28px;font-variant-numeric:tabular-nums}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--mut);margin-top:8px}.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-inline-end:5px;vertical-align:-1px}
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.bar{display:grid;grid-template-columns:110px 1fr 52px;align-items:center;gap:8px;margin:6px 0;font-size:13.5px}
+.bar span:first-child{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar em{display:block;height:10px;border-radius:5px;background:var(--b)}.bar b{text-align:end;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:start}
+th{color:var(--mut);font-weight:600;font-size:12.5px}td.n{text-align:end;font-variant-numeric:tabular-nums}
+td .g{color:var(--mut);font-size:12px}
+.note{color:var(--mut);font-size:12.5px;margin-top:24px}
+</style>
+</head>
+<body>
+<main>
+  <h1>PALS Resus Bay · Usage</h1>
+  <p class="sub">Anonymous counts from the public site. No cookies or personal data: each event adds 1 to a counter. <span id="st">Loading…</span></p>
+  <div class="prog"><i id="pg"></i></div>
+  <div class="tiles" id="tiles"></div>
+  <h2>Last 14 days</h2>
+  <div class="card"><div id="days"></div><div class="legend"><span><i style="background:var(--b)"></i>Active browsers</span><span><i style="background:var(--a)"></i>New browsers</span></div></div>
+  <div class="split">
+    <div><h2>Language</h2><div class="card" id="lang"></div></div>
+    <div><h2>Device</h2><div class="card" id="dev"></div></div>
+    <div><h2>Level (cases started)</h2><div class="card" id="lv"></div></div>
+  </div>
+  <h2>Other modes (times opened)</h2>
+  <div class="card" id="modes"></div>
+  <h2>Cases</h2>
+  <div class="card"><table><thead><tr><th>Case</th><th class="n">Started</th><th class="n">Finished</th><th class="n">Finished %</th></tr></thead><tbody id="cases"></tbody></table></div>
+  <p class="note">Visits count page loads; "browsers" counts each browser once (a person on a phone and a laptop counts twice; clearing site data counts again). Days follow each visitor's own clock.</p>
+</main>
+<script src="data.js" charset="utf-8"></script>
+<script>
+(() => {
+  const NS = 'ofiras-pals-resus-bay', API = 'https://abacus.jasoncameron.dev/get/' + NS + '/';
+  const D = window.PALS || { CASES: [] }, $ = id => document.getElementById(id);
+  const day = n => { const d = new Date(); d.setDate(d.getDate() - n); return [`${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`, `${d.getDate()}/${d.getMonth() + 1}`]; };
+  const DAYS = Array.from({ length: 14 }, (_, i) => day(13 - i));
+  const GENS = [['gen-arrest', 'Random arrest'], ['gen-tachy', 'Random fast pulse'], ['gen-brady', 'Random slow pulse']];
+  const MODES = [['random', 'Surprise me'], ['exam', 'Exam'], ['rush', 'Rhythm rush'], ['drill', 'Dose drill'], ['sprint', 'Sprint'], ['recall', 'Flashcards'], ['algo', 'Algorithms'], ['atlas', 'Algorithm atlas'], ['cpr', 'CPR coach'], ['card', 'Code card'], ['live', 'Live code']];
+  const keys = ['visits', 'visitors', 'died', 'exam-start', 'exam-done', 'exam-pass', 'lang-he', 'lang-en', 'dev-phone', 'dev-tablet', 'dev-desktop', 'lv-1', 'lv-2', 'lv-3']
+    .concat(DAYS.flatMap(([d]) => ['u-' + d, 'n-' + d]), MODES.map(m => 'm-' + m[0]))
+    .concat(D.CASES.flatMap(c => ['cs-' + c.id, 'cd-' + c.id]), GENS.flatMap(g => ['cs-' + g[0], 'cd-' + g[0]]));
+  const V = {}, v = k => V[k] || 0;
+  let cache = null; try { cache = JSON.parse(localStorage.getItem('pals-stats') || 'null'); } catch (e) { /* none */ }
+  if (cache) Object.assign(V, cache.v);
+  const fmt = n => n.toLocaleString('en');
+  function render(done) {
+    const cs = D.CASES.reduce((a, c) => a + v('cs-' + c.id), 0) + GENS.reduce((a, g) => a + v('cs-' + g[0]), 0);
+    const cd = D.CASES.reduce((a, c) => a + v('cd-' + c.id), 0) + GENS.reduce((a, g) => a + v('cd-' + g[0]), 0);
+    $('tiles').innerHTML = [['Visits', v('visits')], ['Browsers', v('visitors')], ['Cases started', cs], ['Cases finished', cd], ['Exams taken', v('exam-done')], ['Exams passed', v('exam-pass')]]
+      .map(([l, n]) => `<div class="tile"><small>${l}</small><b>${fmt(n)}</b></div>`).join('');
+    const mx = Math.max(1, ...DAYS.map(([d]) => v('u-' + d))), W = 700, H = 170, bw = W / 14;
+    $('days').innerHTML = `<svg viewBox="0 0 ${W} ${H + 24}" role="img" aria-label="Active and new browsers per day">${DAYS.map(([d, l], i) => {
+      const a = v('u-' + d), n = v('n-' + d), ha = a / mx * (H - 16), hn = n / mx * (H - 16), x = i * bw + bw * 0.18, w = bw * 0.64;
+      return `<rect x="${x}" y="${H - ha}" width="${w}" height="${ha}" rx="3" fill="#4fc3ff"/><rect x="${x + w * 0.25}" y="${H - hn}" width="${w * 0.5}" height="${hn}" rx="2" fill="#3ef08f"/>${a ? `<text x="${x + w / 2}" y="${H - ha - 4}" fill="#e6f1f5" font-size="11" text-anchor="middle">${a}</text>` : ''}<text x="${x + w / 2}" y="${H + 16}" fill="#8aa4ae" font-size="11" text-anchor="middle">${l}</text>`;
+    }).join('')}<line x1="0" y1="${H}" x2="${W}" y2="${H}" stroke="#1d3a47"/></svg>`;
+    const bars = (el, rows) => { const m = Math.max(1, ...rows.map(r => r[1])); $(el).innerHTML = rows.map(([l, n]) => `<div class="bar"><span>${l}</span><span><em style="width:${n / m * 100}%"></em></span><b>${fmt(n)}</b></div>`).join(''); };
+    bars('lang', [['Hebrew', v('lang-he')], ['English', v('lang-en')]]);
+    bars('dev', [['Phone', v('dev-phone')], ['Tablet', v('dev-tablet')], ['Desktop', v('dev-desktop')]]);
+    bars('lv', [['Guided', v('lv-1')], ['Clinical', v('lv-2')], ['Expert', v('lv-3')]]);
+    bars('modes', MODES.map(([k, l]) => [l, v('m-' + k)]).sort((a, b) => b[1] - a[1]));
+    const rows = D.CASES.map(c => [c.title, c.group, 'cs-' + c.id, 'cd-' + c.id]).concat(GENS.map(g => [g[1], 'Random codes', 'cs-' + g[0], 'cd-' + g[0]]))
+      .map(r => [r[0], r[1], v(r[2]), v(r[3])]).sort((a, b) => b[2] - a[2]);
+    $('cases').innerHTML = rows.map(([t, g, s, d]) => `<tr><td>${t}<br><span class="g">${g}</span></td><td class="n">${fmt(s)}</td><td class="n">${fmt(d)}</td><td class="n">${s ? Math.round(d / s * 100) + '%' : '–'}</td></tr>`).join('');
+    if (done) $('st').textContent = 'Updated ' + new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) + '.';
+  }
+  render(false);
+  if (cache) $('st').textContent = 'Showing the last load (' + new Date(cache.at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) + '), refreshing…';
+  /* the counter service allows 30 requests per 10 s, so the keys are read one by one at a steady pace */
+  let i = 0;
+  const next = () => {
+    if (i >= keys.length) { render(true); try { localStorage.setItem('pals-stats', JSON.stringify({ at: Date.now(), v: V })); } catch (e) { /* ignore */ } return; }
+    const k = keys[i++];
+    let wait = 420;
+    fetch(API + k).then(r => {
+      if (r.status === 429) { i--; wait = 4000; return null; }   /* over the limit: wait for the window to reset, then ask again */
+      return r.ok ? r.json() : { value: 0 };                     /* 404: nobody has done this yet */
+    }).then(j => { if (j) V[k] = j.value || 0; }).catch(() => {}).finally(() => {
+      $('pg').style.width = (i / keys.length * 100) + '%';
+      if (i % 12 === 0) render(false);
+      setTimeout(next, wait);
+    });
+  };
+  next();
+})();
+</script>
+</body>
+</html>
