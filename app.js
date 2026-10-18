@@ -1502,7 +1502,7 @@ function wtAnswer(x, m, btn) {
   if (ok) { use = typed ? roundWt(x) : e; y.classList.add('good'); y.textContent = t('wtOk', use); Sound.ok(); if (btn) btn.classList.add('right'); }
   else {
     use = real; S.score -= 15; S.weak.add('doses');
-    S.errs.push({ k: t('wtK'), msg: `${t('wtBad', x, e)} ${t('wtRule')}`, what: `${t('wtK')}: ${x} kg` });
+    S.errs.push({ k: t('wtK'), msg: `${t('wtBad', x, e)} ${t('wtRule')}`, what: `\u2066${x}\u2069 ${t('kg')}`, need: t('wtFix', e) });
     y.textContent = `${t('wtBad', x, e)} ${t('wtRule')} ${t('wtTape', real)}`; Sound.bad(); if (btn) btn.classList.add('wrong');
   }
   S.c.wt = use; S.hideWt = false;
@@ -2047,7 +2047,11 @@ function err(msg, danger, id, label, pen, head, topic) {
   S.weak.add(topic || S.c.algo);
   S.score -= pen;
   const what = label || (id ? actName(id) : '');
-  S.errs.push({ k: S.p.k, msg, danger: !!danger, what });
+  /* for the debrief: what this step needed instead (the right answer, or the actions still missing) */
+  const p = S.p; let need = '';
+  if (p && p.type === 'q') { const o = (p.opts || []).find(x => x.ok); if (o) need = o.t; }
+  else if (p && p.need && p.type !== 'post') need = p.need.filter((_, i) => !S.done.has(i)).map(it => Array.isArray(it) ? it.map(actName).join(t('or')) : actName(it)).join(', ');
+  S.errs.push({ k: S.p.k, msg, danger: !!danger, what, need: need && need !== what ? need : '' });
   rec(`\u2717 ${what}`, 'bad'); tlEv('err', what); Sound.bad();
   S.fb = { t: 'bad', h: `${head || (danger ? t('dangerous') : t('notNow'))} \u00b7 ${t('pen', pen)}`, m: S.lv >= 3 ? t('noExplain') : msg };
   if (id) flashBtn(id, 'flashbad');
@@ -2760,6 +2764,8 @@ function peek() {
   const m = modal(`<div class="sheet wide" role="dialog" aria-modal="true"><div class="eyebrow">${esc(t('algoCard'))}</div><h2>${esc(a.name)}</h2>${mapHTML(a)}<div class="row"><button class="btn primary" data-x>${esc(t('backPatient'))}</button></div></div>`);
   m.el.addEventListener('click', e => { if (e.target.closest('[data-x]')) m.close(); });
 }
+/* the same mistake made twice in one step is listed once, with a count */
+const errGroups = () => S.errs.reduce((a, e) => { const g = a.find(x => x.k === e.k && x.what === e.what && x.msg === e.msg); if (g) g.n++; else a.push(Object.assign({ n: 1 }, e)); return a; }, []);
 function finish() {
   if (!S || S.finished) return;
   S.finished = true; S.busy = true;
@@ -2793,7 +2799,7 @@ function finish() {
     <h2 class="dbalgo">${algs.map(a => `<span style="--ac:${a.color}">${esc(a.name)}</span>`).join('<i aria-hidden="true">\u2192</i>')}</h2>
     <p>${esc(end ? end.say : '')}</p>
     <div class="score"><div class="pct">${Math.round(pct * 100)}%</div><div>${starsHTML(stars, 'bigstars')}<div class="muted" style="font-size:14px;margin-top:4px">${esc(t('codeTime'))} ${mmss(S.codeT)} \u00b7 ${esc(t('errors', S.errs.length))}${dangers ? esc(t('dangerN', dangers)) : ''} \u00b7 ${esc(t('peeks', S.hints))} \u00b7 +${xp} XP</div></div></div>
-    ${S.errs.length ? `<h3>${esc(t('whatFix'))}</h3><ul>${S.errs.map(e => `<li class="bad"><em>${esc(e.k)}</em> \u00b7 ${e.what ? `<b>${esc(e.what)}</b>: ` : ''}${esc(e.msg)}</li>`).join('')}</ul>` : `<h3>${esc(t('cleanRun'))}</h3><p class="muted">${esc(t('cleanSub'))}</p>`}
+    ${S.errs.length ? `<h3>${esc(t('whatFix'))}</h3><ul class="fixl">${errGroups().map(e => `<li class="bad"><em>${esc(e.k)}</em> \u00b7 ${e.what ? `<b>${esc(e.what)}</b>${e.n > 1 ? ` \u00d7${e.n}` : ''}: ` : ''}${esc(e.msg)}${e.need ? `<span class="fixdo">\u2713 ${esc(t('fixDo'))}: ${esc(e.need)}</span>` : ''}</li>`).join('')}</ul>` : `<h3>${esc(t('cleanRun'))}</h3><p class="muted">${esc(t('cleanSub'))}</p>`}
     ${metricsHTML(Q)}
     ${S.tl.seg.length || S.tl.ev.length ? timelineHTML() : ''}
     ${S.labsSent ? `<h3>${esc(t('labsDbH'))}</h3><p class="muted">${esc(otherLabs())}</p><p><button class="btn sm ghost" data-gasdb>${esc(t('gasView'))}</button></p>` : ''}
