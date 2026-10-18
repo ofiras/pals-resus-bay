@@ -279,7 +279,7 @@ window.PALS = (() => {
         { k: 'Responsiveness', say: 'The child is limp on the pool deck. The scene is safe.', need: ['resp'], why: { check: 'Tap and shout first. If the child responds, the plan changes.', cpr: 'Confirm unresponsiveness first. Tap and shout takes two seconds.' }, msg: 'No response.', teach: 'Tap the shoulder and shout. For an infant, tap the sole of the foot.', t: 12 },
         { k: 'Call out', say: 'No response.', need: ['shout'], why: { ems: 'Your phone is inside. Shout first: someone may come and fetch help while you stay.', check: 'Shout for help first, then check breathing and pulse.' }, msg: 'Silence. Nobody comes.', teach: 'Shout for help at once. If someone comes, send them to call EMS and get the AED.', t: 10 },
         { k: 'Breathing + pulse', say: 'Still alone.', need: ['check'], why: { cpr: 'Check breathing and pulse first, for no more than 10 seconds.' }, msg: 'One gasp every few seconds. No pulse you are sure of.', teach: 'Look for breathing and feel the carotid or femoral pulse at the same time, for no more than 10 seconds.', t: 12 },
-        { type: 'q', k: 'Gasping', say: 'Occasional gasps. No definite pulse.', q: 'What do you do?', opts: [
+        { type: 'q', ex: true, k: 'Gasping', say: 'Occasional gasps. No definite pulse.', q: 'What do you do?', opts: [
           { t: 'Start CPR at 30:2; call EMS after 2 minutes', ok: true },
           { t: 'Start CPR at 15:2; call EMS after 2 minutes', why: '15:2 is for two rescuers. A lone rescuer uses 30:2 at any age.' },
           { t: 'Leave to call EMS first, then start CPR at 30:2', why: 'Alone with an unwitnessed arrest, give 2 minutes of CPR before leaving: children usually arrest from hypoxia. With a phone at hand, call on speaker while you start.' },
@@ -310,7 +310,7 @@ window.PALS = (() => {
           { t: 'Severe obstruction: start back slaps and chest thrusts', ok: true },
           { t: 'Mild obstruction: stay close and let the baby cough', why: 'A silent infant who cannot cry or cough has a severe obstruction. Coughing only helps when it is forceful and noisy.' }
         ], teach: 'Can cry or cough forcefully: mild, watch closely. Silent, no cry, no cough: severe.' },
-        { type: 'q', k: 'Relieve', say: 'You lift the baby out of the high chair.', q: 'Which technique?', opts: [
+        { type: 'q', ex: true, k: 'Relieve', say: 'You lift the baby out of the high chair.', q: 'Which technique?', opts: [
           { t: 'Head down: 5 back slaps, then 5 chest thrusts', ok: true },
           { t: 'Head down: 5 back slaps, then 5 abdominal thrusts', why: 'No abdominal thrusts under 1 year: risk of liver injury. Infants get back slaps and chest thrusts.' },
           { t: 'Sitting up: 5 back slaps, then a blind finger sweep', why: 'Blind sweeps can push the object deeper; remove it only if you see it. Keep the head lower than the chest.' },
@@ -321,7 +321,7 @@ window.PALS = (() => {
           { t: 'Keep back slaps and chest thrusts until the object is out', why: 'Once the infant is unresponsive, switch to CPR. Compressions generate more pressure and may expel the object.' },
           { t: 'Start CPR; do a finger sweep before each set of breaths', why: 'Blind sweeps can push the object deeper. Look in the mouth and remove it only if you see it.' }
         ], teach: 'Unresponsive choking infant: CPR. Before each set of breaths, look in the mouth and remove the object only if you see it.', after: { cpr: true } },
-        { type: 'q', k: 'Ratio', say: 'A waiter is on the phone with EMS. You are the only one doing CPR.', q: 'Technique and ratio as a single rescuer?', opts: [
+        { type: 'q', ex: true, k: 'Ratio', say: 'A waiter is on the phone with EMS. You are the only one doing CPR.', q: 'Technique and ratio as a single rescuer?', opts: [
           { t: '2-thumb encircling hands, 30:2, about 4 cm deep', ok: true },
           { t: '2-thumb encircling hands, 15:2, about 4 cm deep', why: '15:2 is for two rescuers. A lone rescuer uses 30:2 at any age.' },
           { t: '2-thumb encircling hands, 30:2, about 2 cm deep', why: 'Too shallow. Compress at least one third of the chest depth: about 4 cm in an infant.' }
@@ -340,14 +340,14 @@ window.PALS = (() => {
           { t: 'Mild airway obstruction: encourage him to cough', why: 'He cannot speak, cough or make a sound: that is a severe obstruction. Coughing only helps when it is forceful and noisy.' },
           { t: 'Anaphylaxis: use his epinephrine auto-injector', why: 'Sudden silence while eating, with no hives or swelling, is choking. Relieve the obstruction first.' }
         ], teach: 'The universal choking sign: hands at the throat. Unable to speak, cough or breathe means a severe obstruction.' },
-        { type: 'q', k: 'Technique', say: 'You kneel behind him and wrap your arms around his waist.', q: 'Where and how do you push?', opts: [
+        { type: 'q', ex: true, k: 'Technique', say: 'You kneel behind him and wrap your arms around his waist.', q: 'Where and how do you push?', opts: [
           { t: 'Fist above the navel, below the breastbone; quick inward-upward thrusts', ok: true },
           { t: 'Fist on the lower breastbone; slow, steady inward squeezes', why: 'That is the chest-thrust position, used for infants and for pregnant or very obese patients. In a child, the fist goes above the navel and below the breastbone, with quick inward-upward thrusts.' },
           { t: 'Fist above the navel, below the breastbone; one thrust, then look in the mouth', why: 'Keep giving thrusts until the object comes out or he becomes unresponsive. Do not stop to look between thrusts.' }
         ], teach: 'Child over 1 year: abdominal thrusts (Heimlich), repeated until the object is expelled or the child becomes unresponsive.' },
         { k: 'Goes limp', say: 'After several thrusts he goes limp. You lower him to the floor. Other parents are close by.', set: { hr: 50, skin: 'grey', look: 'Limp \u00b7 unresponsive \u00b7 not breathing' }, need: [['shout', 'ems']], why: { cpr: 'Shout first: one sentence gets a parent calling EMS while you start CPR.', check: 'Get help moving first, then start CPR.' }, msg: 'A parent is calling EMS on speaker.', teach: 'Unresponsive choking child: shout for help and have someone call EMS, then start CPR.', t: 10 },
         { k: 'CPR', say: 'He is unresponsive and not breathing.', need: ['cpr'], why: { check: 'An unresponsive choking child needs CPR at once: compressions may push the object out.', resp: 'He is already unresponsive. Start CPR.' }, msg: 'Compressions started, 30:2.', after: { cpr: true }, teach: 'Unresponsive choking child: start CPR right away. Compressions raise the pressure in the chest and may expel the object.', t: 10 },
-        { type: 'q', k: 'Breaths', say: 'After 30 compressions you open his mouth to give breaths.', q: 'What do you do before each set of breaths?', opts: [
+        { type: 'q', ex: true, k: 'Breaths', say: 'After 30 compressions you open his mouth to give breaths.', q: 'What do you do before each set of breaths?', opts: [
           { t: 'Look in the mouth; remove the object only if you see it', ok: true },
           { t: 'Sweep a finger blindly through the back of the throat', why: 'Blind finger sweeps can push the object deeper. Remove it only if you can see it.' },
           { t: 'Skip the breaths: compressions only until EMS arrives', why: 'A choking arrest is a hypoxic arrest. Keep giving breaths after each look in the mouth.' }
@@ -374,7 +374,7 @@ window.PALS = (() => {
         { k: 'Analyze', say: 'AED: "Analyzing heart rhythm. Do not touch the patient."', set: { monitor: true }, need: ['rhythm'], why: { cpr: 'Hands off while the AED analyzes.', shock: 'Let the AED analyze first. It will tell you if a shock is advised.' }, msg: 'AED: "Shock advised. Charging."', t: 10 },
         { k: 'Shock', say: 'AED: "Stand clear. Press the flashing button."', set: { alarm: true }, need: ['shock'], why: { cpr: 'Shock first, then CPR immediately.', check: "!Don't delay the shock to feel for a pulse." }, msg: 'Shock delivered.', teach: 'Make sure nobody is touching him, then press shock.', t: 10 },
         { k: 'Resume CPR', say: 'AED: "Shock delivered. Begin CPR."', need: ['cpr'], why: { check: 'No pulse check now: 2 minutes of CPR, then the AED re-analyzes.', rhythm: 'CPR first. The AED re-analyzes in 2 minutes.' }, msg: 'Compressions restarted within seconds.', teach: 'After a shock: CPR immediately for 2 minutes.', t: 8 },
-        { type: 'q', k: 'Swap', say: 'Two minutes pass. Your arms are burning and a teammate offers to take over.', q: 'When should rescuers swap compressors?', opts: [
+        { type: 'q', ex: true, k: 'Swap', say: 'Two minutes pass. Your arms are burning and a teammate offers to take over.', q: 'When should rescuers swap compressors?', opts: [
           { t: 'Every 2 minutes, during the AED analysis, in under 5 seconds', ok: true },
           { t: 'Only when the compressor feels too tired to continue', why: 'Compression quality drops before rescuers notice they are tired. Swap every 2 minutes, during the analysis.' },
           { t: 'Every 5 minutes, right after a shock is delivered', why: 'Quality falls after about 2 minutes. Swap every 2 minutes, during the analysis pause, in under 5 seconds.' }
@@ -396,7 +396,7 @@ window.PALS = (() => {
           { t: 'Breaths only; compress only if the pulse is lost', why: 'Compressions start at HR under 60/min with poor perfusion, not only when the pulse is gone.' },
           { t: 'Get the monitor on first, then decide on CPR', why: 'Do not delay CPR for equipment. A palpated pulse under 60/min with poor perfusion is enough to start.' }
         ], teach: 'HR under 60/min with poor perfusion despite oxygenation and ventilation: start CPR.' },
-        { type: 'q', k: 'Technique', say: 'The nurse is back with a bag-mask.', q: 'Two rescuers, infant. Technique and ratio?', opts: [
+        { type: 'q', ex: true, k: 'Technique', say: 'The nurse is back with a bag-mask.', q: 'Two rescuers, infant. Technique and ratio?', opts: [
           { t: '2-thumb encircling hands, 15:2', ok: true },
           { t: '2-thumb encircling hands, 30:2', why: '30:2 is for a lone rescuer. With two rescuers, infants and children get 15:2.' },
           { t: '2-thumb encircling hands, 3:1', why: '3:1 is the newborn (delivery room) ratio. Beyond the newborn period, two rescuers use 15:2.' },
@@ -404,7 +404,7 @@ window.PALS = (() => {
         ], teach: 'Two rescuers: 15:2, two-thumb encircling hands, depth about 4 cm, 100\u2013120/min.', after: { cpr: true } },
         { k: 'Team arrives', say: 'CPR is running. The code team rolls in the cart.', need: [['o2', 'bvm'], 'pads'], ok: ['ivio', 'suction', 'position'], why: { epi: 'Not yet: first oxygen, ventilation and the monitor/defibrillator.' }, msg: 'Bag-mask with 100% oxygen. Pads on.', after: { rhythm: 'asystole', hr: 0, pulse: false }, teach: 'Arrest step 1: start CPR, give oxygen, attach the monitor/defibrillator.', t: 16 },
         { k: 'Rhythm check', say: 'Monitor connected. Time for a rhythm check.', set: { rhythm: 'asystole', hr: 0, pulse: false, alarm: true }, need: ['rhythm'], msg: 'A flat line.', t: 10 },
-        { type: 'q', k: 'Flat line', say: 'The monitor shows a flat line.', q: 'Before you call it asystole\u2026', opts: [
+        { type: 'q', ex: true, k: 'Flat line', say: 'The monitor shows a flat line.', q: 'Before you call it asystole\u2026', opts: [
           { t: 'Check leads and gain, confirm in a second lead', ok: true },
           { t: 'Give one 2 J/kg shock in case it is fine VF', why: 'Asystole is not shockable, and a shock only interrupts CPR. Confirm with leads, gain and a second lead first.' },
           { t: 'Pause CPR for 30 seconds and watch the rhythm', why: 'Pauses in compressions must stay under 10 seconds. Confirm the rhythm with leads and gain during that short check.' }
@@ -423,7 +423,7 @@ window.PALS = (() => {
         ], teach: 'PEA = organized electrical activity without a palpable pulse. Non-shockable.', after: { cpr: true } },
         { type: 'cycle', k: 'Cause + airway', say: 'CPR continues. Find the cause and secure the airway. Repeat epinephrine every 3\u20135 minutes: watch the epi timer.', dur: 20, need: ['hts', 'airway'], ok: ['epi', 'suction', 'position'], hts: { clue: 'Admitted with bronchiolitis. Found apneic. During bagging the chest barely rises. SpO2 unreadable.', ans: 'Hypoxia', fix: 'Secure the airway and ventilate effectively.' }, why: { shock: '!PEA is not shockable.' }, teach: 'Pediatric arrest is usually respiratory. With an advanced airway: continuous compressions, 1 breath every 2\u20133 s.' },
         { k: 'ROSC?', say: 'Rhythm check: sinus rhythm at 150. Look at the capnography.', set: { cpr: false, rhythm: 'nsr', hr: 150, etco2: 38 }, need: ['check'], why: { cpr: 'An organized rhythm with a sudden EtCO2 rise: feel for a pulse first.' }, msg: 'Strong brachial pulse!', after: { pulse: true, spo2: 92, alarm: false, skin: 'pale', look: 'Color returning' }, teach: 'A sudden rise in EtCO2 is often the first sign of ROSC.', t: 10 },
-        { type: 'q', k: 'Post-ROSC', say: 'ROSC.', q: 'What oxygen target now?', opts: [
+        { type: 'q', ex: true, k: 'Post-ROSC', say: 'ROSC.', q: 'What oxygen target now?', opts: [
           { t: 'Aim for SpO2 94\u201399%', ok: true },
           { t: 'Aim for SpO2 100%', why: 'Avoid hyperoxia after ROSC: it adds oxidative injury. Wean oxygen to keep SpO2 94\u201399%.' },
           { t: 'Aim for SpO2 88\u201392%', why: '88\u201392% is a target for chronic lung disease, not post-arrest care. Avoid hypoxemia: aim for 94\u201399%.' }
@@ -454,7 +454,7 @@ window.PALS = (() => {
         { k: 'Shock 3', say: 'Still VF.', need: ['shock'], why: { amio: 'Shock first. The antiarrhythmic goes in during the CPR right after this shock.', lido: 'Shock first. The antiarrhythmic goes in during the CPR right after this shock.' }, msg: 'Shock delivered. CPR resumes.', after: { cpr: true }, teach: 'Subsequent shocks: at least 4 J/kg, maximum 10 J/kg or the adult dose.', t: 12 },
         { type: 'cycle', k: 'Antiarrhythmic', say: 'CPR for 2 minutes. Give the antiarrhythmic, and work out why this happened.', dur: 20, need: [['amio', 'lido'], 'hts'], dose: { amio: 'amioArrest' }, ok: ['epi', 'airway'], hts: { clue: 'A teammate admits they dared him this morning, and he swallowed "a handful" of his grandmother\u2019s heart pills.', ans: 'Toxins', fix: 'Poison center, specific antidotes.' }, teach: 'After the 3rd shock: amiodarone 5 mg/kg bolus (or lidocaine 1 mg/kg). Treat reversible causes.' },
         { k: 'Check 4', say: 'Rhythm check: organized narrow complexes at 120.', set: { cpr: false, rhythm: 'nsr', hr: 120, alarm: false }, need: ['check'], why: { shock: '!Organized rhythm: check for a pulse. Never shock it.', cpr: 'Organized rhythm: check for a pulse first, no more than 10 s.' }, msg: 'Carotid pulse present. Check the BP on the monitor.', after: { pulse: true, bp: '84/50', spo2: 93, skin: 'pale', look: 'Unresponsive \u00b7 pulse present' }, t: 10 },
-        { type: 'q', k: 'Post-ROSC', say: 'ROSC.', q: 'Which post-ROSC plan is right?', opts: [
+        { type: 'q', ex: true, k: 'Post-ROSC', say: 'ROSC.', q: 'Which post-ROSC plan is right?', opts: [
           { t: 'SpO2 94\u201399%, PaCO2 35\u201345, treat hypotension, avoid fever, check glucose', ok: true },
           { t: 'SpO2 94\u201399%, PaCO2 25\u201330, treat hypotension, avoid fever, check glucose', why: 'PaCO2 25\u201330 is hyperventilation: it lowers cerebral blood flow. Aim for a normal PaCO2 (35\u201345).' },
           { t: 'SpO2 100% (FiO2 1.0), PaCO2 35\u201345, treat hypotension, avoid fever, check glucose', why: 'Hyperoxia harms the post-arrest brain. Titrate oxygen to SpO2 94\u201399%.' }
@@ -489,7 +489,7 @@ window.PALS = (() => {
         ], teach: 'Post-ROSC hypotension worsens brain injury. Treat it right away.' },
         { k: 'Treat hypotension', say: 'Hypotensive shock after ROSC, from hypovolemia.', need: ['fluid'], ok: ['vaso', 'glucose'], msg: 'Another bolus running.', after: { bp: '74/42', hr: 138, skin: 'pale', look: 'CRT 3 s \u00b7 ventilated' }, teach: 'Post-ROSC hypotension: 10\u201320 mL/kg boluses; add epinephrine, dopamine or norepinephrine if it persists.', t: 14 },
         { k: 'Brain + metabolism', say: 'Her color and CRT are improving. Now protect the brain.', need: ['glucose'], ok: ['ecg12'], why: { dextrose: 'Check first, then treat.' }, msg: 'Glucose 110 mg/dL. Temperature 37.9 \u00b0C.', teach: 'Post-ROSC: check glucose and electrolytes, treat seizures, avoid fever.', t: 12 },
-        { type: 'q', k: 'Temperature', say: 'Temperature 37.9 \u00b0C and rising. She is still comatose.', q: 'Temperature plan?', opts: [
+        { type: 'q', ex: true, k: 'Temperature', say: 'Temperature 37.9 \u00b0C and rising. She is still comatose.', q: 'Temperature plan?', opts: [
           { t: 'Treat it: keep core temperature at or below 37.5 \u00b0C', ok: true },
           { t: 'Culture first: treat fever only if infection is proven', why: 'After arrest, fever worsens brain injury whatever its cause. Send cultures, but control temperature now.' },
           { t: 'Wait: give an antipyretic only above 38.5 \u00b0C', why: 'There is no safe fever threshold after arrest. Keep core temperature at or below 37.5 \u00b0C.' }
@@ -519,7 +519,7 @@ window.PALS = (() => {
         { k: 'Shock 2', say: 'Still pulseless VT.', need: ['shock'], why: { sync: '!Still no pulse: unsynchronized.' }, msg: 'Shock delivered. CPR resumes.', after: { cpr: true }, teach: 'Second shock: 4 J/kg.', t: 12 },
         { type: 'cycle', k: 'Epinephrine', say: 'CPR for 2 minutes. Calcium is going in.', dur: 14, need: ['epi'], ok: ['airway'], why: { amio: 'Amiodarone comes after the 3rd shock. Now: epinephrine.' }, teach: 'After the 2nd shock: epinephrine 0.01 mg/kg every 3\u20135 minutes.' },
         { k: 'Check 3', say: 'Rhythm check: organized narrow complexes. Look at the capnography.', set: { cpr: false, rhythm: 'nsr', hr: 100, etco2: 36, alarm: false }, need: ['check'], why: { shock: '!Organized rhythm: never shock it. Check for a pulse.', cpr: 'Organized rhythm: check for a pulse first.' }, msg: 'Carotid pulse present!', after: { pulse: true, bp: '86/50', spo2: 94, rr: 0, skin: 'pale', look: 'ROSC \u00b7 unresponsive' }, teach: 'A sudden rise in EtCO2 is often the first sign of ROSC.', t: 10 },
-        { type: 'q', k: 'Potassium', say: 'ROSC. His potassium is still very high.', q: 'What keeps the potassium from stopping his heart again?', opts: [
+        { type: 'q', ex: true, k: 'Potassium', say: 'ROSC. His potassium is still very high.', q: 'What keeps the potassium from stopping his heart again?', opts: [
           { t: 'Calcium, insulin with glucose, bicarbonate; then urgent dialysis', ok: true },
           { t: 'Calcium, then furosemide and a potassium-free fluid bolus', why: 'A child in kidney failure makes little urine, so a diuretic will not clear the potassium. Shift it into the cells with insulin and glucose and bicarbonate, then dialyze.' },
           { t: 'An amiodarone infusion to prevent the VT from coming back', why: 'The VT came from the high potassium. Treat the potassium: an antiarrhythmic does not fix the cause.' }
@@ -535,7 +535,7 @@ window.PALS = (() => {
       init: { monitor: true, rhythm: 'nsr', hr: 78, pulse: true, spo2: 98, rr: 16, bp: '112/70', skin: 'pink', look: 'Alert \u00b7 embarrassed about fainting' },
       phases: [
         { k: '12-lead', say: 'She feels fine. She fainted when her alarm clock rang, and once before at a swimming lesson.', need: ['ecg12'], ok: ['ivio', 'o2', 'auscult'], why: { pads: 'She is alert with a normal rhythm on the monitor. Get the 12-lead to look at the intervals first.' }, msg: 'Sinus rhythm. QTc 560 ms.', teach: 'Fainting triggered by a sudden noise, exercise or swimming: think long QT syndrome and get a 12-lead.', t: 14 },
-        { type: 'q', k: 'Long QT', say: 'The 12-lead shows a long QT interval.', q: 'Why does this matter?', opts: [
+        { type: 'q', ex: true, k: 'Long QT', say: 'The 12-lead shows a long QT interval.', q: 'Why does this matter?', opts: [
           { t: 'Long QT can trigger torsades de pointes and sudden death', ok: true },
           { t: 'Long QT matters only if she takes QT-prolonging drugs', why: 'Congenital long QT can cause torsades on its own, often triggered by noise, exercise or swimming. Her faint is a warning.' },
           { t: 'Long QT is harmless once the faint has fully passed', why: 'Fainting with a long QT is a red flag for torsades de pointes and sudden death.' }
@@ -551,7 +551,7 @@ window.PALS = (() => {
         { k: 'Shock', say: 'Torsades without a pulse. Charged.', need: ['shock'], why: { sync: '!She has no pulse, and polymorphic VT cannot be synchronized. Defibrillate.', mag: 'Shock first, then magnesium during CPR.' }, msg: 'Shock delivered. CPR resumes.', after: { cpr: true }, teach: 'First shock: 2 J/kg.', t: 10 },
         { type: 'cycle', k: 'Magnesium', say: 'CPR for 2 minutes. Get access and give the drug for this rhythm.', dur: 16, need: ['ivio', 'mag'], ok: ['airway', 'bvm'], why: { amio: '!Amiodarone prolongs the QT and can worsen torsades. Give magnesium.', procain: '!Procainamide prolongs the QT. Avoid it in torsades.', epi: 'In a shockable rhythm epinephrine comes after the 2nd shock. Magnesium is the drug for torsades.' }, teach: 'Torsades: magnesium sulfate 25\u201350 mg/kg IV/IO (max 2 g), pushed over a few minutes in arrest.' },
         { k: 'Check 2', say: 'Rhythm check: organized narrow complexes.', set: { cpr: false, rhythm: 'nsr', hr: 96, alarm: false }, need: ['check'], why: { shock: '!Organized rhythm: check for a pulse, never shock it.', cpr: 'Organized rhythm: check for a pulse first.' }, msg: 'Radial pulse present!', after: { pulse: true, bp: '98/60', spo2: 95, rr: 14, skin: 'pale', look: 'ROSC \u00b7 groaning' }, t: 10 },
-        { type: 'q', k: 'From now on', say: 'ROSC. She is starting to move.', q: 'Which drugs should she avoid from now on?', opts: [
+        { type: 'q', ex: true, k: 'From now on', say: 'ROSC. She is starting to move.', q: 'Which drugs should she avoid from now on?', opts: [
           { t: 'Drugs that prolong the QT, such as macrolides and ondansetron', ok: true },
           { t: 'Beta-blockers, because they raise her risk of torsades', why: 'Beta-blockers are the main long-term treatment for long QT syndrome.' },
           { t: 'Magnesium and potassium, because they set off the arrhythmia', why: 'Low magnesium and potassium promote torsades. Keep both in the high-normal range.' }
@@ -578,7 +578,7 @@ window.PALS = (() => {
           { t: 'Give atropine 0.02 mg/kg IV before compressions', why: 'Compressions come first when HR stays under 60 with poor perfusion. Epinephrine is the first drug; atropine is for vagal tone or a primary AV block.' }
         ], teach: 'Bradycardia rule: HR under 60/min + poor perfusion despite O2 and ventilation means CPR.', after: { cpr: true } },
         { type: 'cycle', k: 'CPR + epinephrine', say: 'CPR with ventilation. The bradycardia persists: get access and give the first-line drug.', dur: 14, need: ['ivio', 'epi'], why: { atropine: 'Epinephrine is first-line for symptomatic bradycardia. Atropine is for vagal causes or primary AV block.', adenosine: '!Adenosine slows AV conduction: the opposite of what she needs.' }, teach: 'Epinephrine 0.01 mg/kg IV/IO, repeat every 3\u20135 min.' },
-        { type: 'q', k: 'Atropine?', say: 'Pulse check: a good pulse, and she is pinking up. CPR stops.', set: { cpr: false, rhythm: 'nsr', hr: 118, spo2: 95, bp: '88/52', skin: 'pale', look: 'Pinking up \u00b7 CRT 3 s' }, q: 'When would atropine be the better first drug?', opts: [
+        { type: 'q', ex: true, k: 'Atropine?', say: 'Pulse check: a good pulse, and she is pinking up. CPR stops.', set: { cpr: false, rhythm: 'nsr', hr: 118, spo2: 95, bp: '88/52', skin: 'pale', look: 'Pinking up \u00b7 CRT 3 s' }, q: 'When would atropine be the better first drug?', opts: [
           { t: 'Increased vagal tone (e.g. intubation) or primary AV block', ok: true },
           { t: 'Hypoxic bradycardia from respiratory failure, as in this child', why: 'Hypoxic bradycardia: oxygenate and ventilate, then CPR and epinephrine if HR stays under 60.' },
           { t: 'Bradycardia under 60 that persists despite good CPR', why: 'Bradycardia with poor perfusion despite oxygenation, ventilation and CPR calls for epinephrine first.' }
@@ -620,13 +620,13 @@ window.PALS = (() => {
       phases: [
         { k: 'Airway', say: 'She has stopped breathing. Thick secretions fill her nose.', need: ['position', 'suction'], ok: ['resp', 'o2'], why: { epi: 'Hypoxia is driving this. Airway and breathing first.', atropine: 'Hypoxia is driving this. Airway and breathing first.', cpr: 'She has a pulse. Open the airway and ventilate first; CPR if the heart rate stays under 60 with poor perfusion despite that.' }, msg: 'Airway open, nose and mouth suctioned. Still not breathing.', teach: 'Young infants breathe through the nose: secretions alone can block the airway. Position the head neutral and suction.', t: 12 },
         { k: 'Ventilate', say: 'Still not breathing. Her pulse feels slower.', set: { hr: 62 }, need: ['bvm'], ok: ['o2'], why: { cpr: 'She has a pulse. Ventilate with oxygen first and reassess in 30 seconds.', epi: 'Ventilate first: most infant bradycardia is hypoxic.', atropine: 'Ventilate first: most infant bradycardia is hypoxic.' }, msg: 'Bag-mask with 100% oxygen. The chest rises with each breath. Look at the monitor.', after: { rhythm: 'stach', hr: 150, spo2: 95, rr: 40, bp: '78/48', skin: 'pale', look: 'Breathing again \u00b7 pinking up' }, teach: 'Infant bradycardia: ventilate with oxygen first. The heart rate usually recovers within seconds.', t: 12 },
-        { type: 'q', k: 'Why', say: 'Look at the monitor. She is pinking up.', q: 'Why did the heart rate recover?', opts: [
+        { type: 'q', ex: true, k: 'Why', say: 'Look at the monitor. She is pinking up.', q: 'Why did the heart rate recover?', opts: [
           { t: 'Ventilation reversed the hypoxia that was slowing her heart', ok: true },
           { t: 'Bagging triggered a reflex that speeds up the heart', why: 'Airway stimulation triggers vagal reflexes, which slow the heart. The rate rose because oxygen reached the heart muscle.' },
           { t: 'The slow rate was a monitor artifact from her movement', why: 'She was grey, apneic and had a slow pulse: real hypoxic bradycardia, which ventilation reversed.' }
         ], teach: 'Hypoxia is the most common cause of bradycardia in children. Oxygenation and ventilation come first.' },
         { k: 'Check', say: 'She is breathing on her own again, but she has not fed for hours.', need: ['glucose'], ok: ['o2', 'ivio'], why: { dextrose: 'Check first, then treat.' }, msg: 'Glucose 82 mg/dL.', teach: 'Check glucose in every sick infant.', t: 12 },
-        { type: 'q', k: 'Plan', say: 'Twenty minutes later she has another short pause.', q: 'What does she need now?', opts: [
+        { type: 'q', ex: true, k: 'Plan', say: 'Twenty minutes later she has another short pause.', q: 'What does she need now?', opts: [
           { t: 'PICU: continuous monitoring and respiratory support', ok: true },
           { t: 'Hourly nebulized albuterol on the ward', why: 'Bronchodilators do not help bronchiolitis, and they do nothing for apnea. Recurrent apnea needs intensive care.' },
           { t: 'Discharge home with a home apnea monitor', why: 'A young infant with recurrent apnea needs intensive care, with high-flow, CPAP or ventilation ready.' }
@@ -642,13 +642,13 @@ window.PALS = (() => {
       init: { monitor: true, rhythm: 'nsr', hr: 120, pulse: true, spo2: 96, rr: 0, bp: '96/60', skin: 'pink', look: 'Sedated \u00b7 laryngoscope in' },
       phases: [
         { k: 'Stop', say: 'The laryngoscope is in. The pulse oximeter tone suddenly drops in pitch and slows.', set: { rhythm: 'sbrady', hr: 48, spo2: 90, bp: '70/40', skin: 'pale' }, need: ['bvm'], ok: ['o2'], why: { airway: 'Stop this attempt: the heart rate is falling. Oxygenate first and try again later.', atropine: 'First take the blade out and oxygenate. Then decide on a drug.', cpr: 'She has a pulse and you have just removed the trigger. Ventilate with oxygen first; CPR if the heart rate stays under 60 with poor perfusion.' }, msg: 'Blade out. Bag-mask with 100% oxygen.', after: { spo2: 97 }, teach: 'Any fall in heart rate or saturation during laryngoscopy: stop, take the blade out, ventilate with oxygen.', t: 10 },
-        { type: 'q', k: 'Cause', say: 'Her oxygen is back up but her pulse is still slow and weak. Look at the monitor.', q: 'What most likely caused this?', opts: [
+        { type: 'q', ex: true, k: 'Cause', say: 'Her oxygen is back up but her pulse is still slow and weak. Look at the monitor.', q: 'What most likely caused this?', opts: [
           { t: 'Vagal stimulation from the laryngoscope', ok: true },
           { t: 'Hypoxia from the long intubation attempt', why: 'Hypoxia is the most common cause, but her saturation is normal again and the rate is still slow. Laryngoscopy is a strong vagal trigger.' },
           { t: 'Complete heart block caused by the sedative', why: 'There is a P wave before every QRS: this is sinus bradycardia. Sedatives do not cause complete heart block.' }
         ], teach: 'Bradycardia during laryngoscopy or suctioning: think vagal stimulation, as well as hypoxia.' },
         { k: 'Drug', say: 'Vagal bradycardia, still poorly perfused despite good oxygenation.', need: ['atropine'], ok: ['bvm', 'o2'], why: { epi: 'Epinephrine is first-line for bradycardia from hypoxia or ischemia. For a vagal cause, atropine is the drug.', adenosine: '!Adenosine blocks the AV node: dangerous in bradycardia.', cpr: 'She is oxygenated and has a pulse. Give the drug for vagal bradycardia; start CPR if the heart rate stays under 60 with poor perfusion.' }, msg: 'Atropine in. The heart rate climbs. Look at the monitor.', after: { rhythm: 'stach', hr: 132, bp: '98/62', skin: 'pink' }, teach: 'Atropine 0.02 mg/kg IV/IO (max single dose 0.5 mg) for bradycardia from vagal tone or a primary AV block. It may be repeated once.', t: 14 },
-        { type: 'q', k: 'Next attempt', say: 'Stable again. The team prepares for another attempt.', q: 'What lowers the risk on the next attempt?', opts: [
+        { type: 'q', ex: true, k: 'Next attempt', say: 'Stable again. The team prepares for another attempt.', q: 'What lowers the risk on the next attempt?', opts: [
           { t: 'Full preoxygenation, atropine ready, most experienced operator', ok: true },
           { t: 'A shorter preoxygenation, so that the attempt starts sooner', why: 'Preoxygenation buys time before the saturation falls. Never shorten it.' },
           { t: 'A longer attempt, keeping the blade in until the tube passes', why: 'Stop any attempt that drops the heart rate or saturation, and keep attempts short (about 30 seconds).' }
@@ -677,7 +677,7 @@ window.PALS = (() => {
         { k: 'Vagal', say: 'Stable SVT.', need: ['vagal'], ok: ['ivio', 'o2', 'ecg12'], why: { adenosine: 'Soon, but in a stable infant try a vagal maneuver first, while getting access.', sync: 'He is stable. No shock needed.' }, msg: 'Ice-water bag on the face for 15 seconds. Still SVT.', teach: 'Infants: ice to the face. No carotid massage, no pressure on the eyes. Older children: Valsalva, blowing through a straw.', t: 14 },
         { k: 'Adenosine 1', say: 'The vagal maneuver failed.', need: ['ivio', 'adenosine'], why: { amio: 'Adenosine first for SVT.', sync: 'He is not unstable. No shock yet.', vagal: 'The vagal maneuver already failed. Do not delay adenosine with repeated attempts.' }, msg: 'Rapid push and flush\u2026 a brief pause\u2026 SVT returns.', flash: { rhythm: 'asystole', ms: 2200 }, teach: 'Adenosine 0.1 mg/kg (max 6 mg) as a rapid push with an immediate saline flush. Run a rhythm strip.', t: 20 },
         { k: 'Adenosine 2', say: 'Back in SVT at 280.', need: ['adenosine'], why: { vagal: 'Vagal maneuvers already failed. Give the second adenosine dose now.', amio: 'Give the second, larger adenosine dose (0.2 mg/kg) first. Amiodarone or procainamide only with expert consultation if adenosine fails.', sync: 'He is stable. Give the second adenosine dose first.' }, msg: 'Rapid push and flush\u2026 pause\u2026 sinus rhythm at 150!', flash: { rhythm: 'asystole', ms: 2000 }, after: { rhythm: 'nsr', hr: 150, look: 'Calm \u00b7 feeding' }, teach: 'Second dose: 0.2 mg/kg (max 12 mg).', t: 16 },
-        { type: 'q', k: 'What if', say: 'Converted. One more question.', q: 'If he had been lethargic and hypotensive, what would you have done?', opts: [
+        { type: 'q', ex: true, k: 'What if', say: 'Converted. One more question.', q: 'If he had been lethargic and hypotensive, what would you have done?', opts: [
           { t: 'Synchronized cardioversion 0.5\u20131 J/kg, then 2 J/kg', ok: true },
           { t: 'Defibrillation (unsynchronized) 2 J/kg, then 4 J/kg', why: 'He has a pulse. Use synchronized cardioversion at 0.5\u20131 J/kg, then 2 J/kg.' },
           { t: 'Amiodarone 5 mg/kg IV over 20 min, then reassess', why: 'Unstable SVT needs synchronized cardioversion without delay. Adenosine only if IV access is ready and it causes no delay.' }
@@ -727,7 +727,7 @@ window.PALS = (() => {
         ], teach: 'Any tachycardia with a pulse plus compromise: synchronized cardioversion.' },
         { k: 'Sync 1', say: 'Unstable VT with a pulse.', need: ['sync'], ok: ['o2', 'adenosine'], why: { shock: '!She has a pulse: synchronized, not unsynchronized.' }, msg: 'Synchronized shock. Still VT.', teach: 'Unstable VT with a pulse: synchronized cardioversion 0.5\u20131 J/kg.', t: 14 },
         { k: 'Sync 2', say: 'No change.', need: ['sync'], ok: ['o2', 'adenosine'], msg: 'Shock delivered\u2026 the rhythm degenerates. No pulse!', after: { rhythm: 'vf', pulse: false, hr: 0, bp: null, spo2: null, alarm: true, look: 'Unresponsive \u00b7 no pulse' }, teach: 'Escalate synchronized cardioversion to 2 J/kg.', t: 12 },
-        { type: 'q', k: 'SYNC trap', say: 'VF on the monitor. The defibrillator is still in SYNC mode.', q: 'What happens if you press shock now?', opts: [
+        { type: 'q', ex: true, k: 'SYNC trap', say: 'VF on the monitor. The defibrillator is still in SYNC mode.', q: 'What happens if you press shock now?', opts: [
           { t: 'It may not fire: no R waves to sync to. Turn SYNC off and shock', ok: true },
           { t: 'It fires normally: SYNC only delays it slightly. Shock as is', why: 'In VF there are no R waves to sync to, so many devices will not discharge. Turn SYNC off, then defibrillate.' },
           { t: 'It fires at reduced energy. Raise the energy and keep SYNC on', why: 'You set the energy and SYNC does not lower it. The problem is the device waiting for an R wave: turn SYNC off.' }
@@ -751,7 +751,7 @@ window.PALS = (() => {
           { t: 'Supraventricular tachycardia (SVT)', why: 'SVT in a toddler is usually 180\u2013220 or more, with no visible P waves and a fixed rate. P waves and a varying rate mean sinus tachycardia.' },
           { t: 'Atrial flutter with 2:1 block', why: 'Flutter gives a sawtooth baseline and a fixed rate. Here the P waves are normal and the rate varies.' }
         ], teach: 'Sinus tachycardia: P waves present, rate varies with activity, gradual onset, and a cause (fever, pain, fear, dehydration).' },
-        { type: 'q', k: 'Treatment', say: 'Sinus tachycardia. Alert, CRT 2 s, warm hands.', q: 'What brings the heart rate down?', opts: [
+        { type: 'q', ex: true, k: 'Treatment', say: 'Sinus tachycardia. Alert, CRT 2 s, warm hands.', q: 'What brings the heart rate down?', opts: [
           { t: 'Treat the fever, pain and thirst; recheck the rate', ok: true },
           { t: 'Adenosine 0.1 mg/kg rapid push to slow the rate', why: 'Adenosine does not convert sinus tachycardia: it causes a brief pause and the rate comes straight back. Treat the cause.' },
           { t: 'Synchronized cardioversion at 0.5 J/kg under sedation', why: 'Cardioversion does not treat sinus tachycardia and puts her at risk. Treat the cause.' }
@@ -799,12 +799,12 @@ window.PALS = (() => {
         { k: 'Bolus', say: 'IO in.', need: ['fluid'], ok: ['glucose', 'abx'], msg: '20 mL/kg pushed over 5\u201310 min.', after: { bp: '72/38', hr: 180 }, teach: 'Septic shock: isotonic crystalloid in 10\u201320 mL/kg boluses, each over 5\u201310 minutes, with reassessment after every bolus (stop if crackles or a big liver appear).', t: 14 },
         { k: 'Two urgent things', say: 'Bolus done. Two more time-critical steps.', need: ['glucose', 'abx'], ok: ['fluid'], why: { dextrose: 'Check the glucose before treating it.' }, msg: 'Antibiotics in. Glucose: 45 mg/dL.', teach: 'Antibiotics as soon as possible, within the first hour of septic shock (blood culture first only if it causes no delay). Check glucose in every sick child.', t: 18 },
         { k: 'Hypoglycemia', say: 'Glucose 45 mg/dL.', need: ['dextrose'], ok: ['fluid'], msg: 'Dextrose in. Recheck: 70 mg/dL.', teach: 'Hypoglycemia is 60 mg/dL or less. Dextrose 0.5\u20131 g/kg: D10W 5\u201310 mL/kg.', t: 14 },
-        { type: 'q', k: 'Reassess', say: 'Before the next bolus you reassess.', q: 'What makes you stop pushing fluids?', opts: [
+        { type: 'q', ex: true, k: 'Reassess', say: 'Before the next bolus you reassess.', q: 'What makes you stop pushing fluids?', opts: [
           { t: 'New crackles and an enlarging liver', ok: true },
           { t: 'Falling heart rate and a shorter CRT', why: 'A falling HR and faster CRT mean he is responding. Stop for overload signs: crackles, hepatomegaly, more work of breathing.' },
           { t: 'A cumulative total of 40 mL/kg given', why: 'There is no fixed volume cap. Reassess after each bolus and stop when overload signs appear.' }
         ], teach: 'Reassess after every bolus: HR, BP, CRT, mental status, urine, lungs, liver.' },
-        { type: 'q', k: 'Refractory', say: 'After 60 mL/kg: still cold mottled extremities, CRT 5 s. Look at the monitor.', set: { bp: '64/30' }, q: 'Fluid-refractory cold shock. Which vasoactive?', opts: [
+        { type: 'q', ex: true, k: 'Refractory', say: 'After 60 mL/kg: still cold mottled extremities, CRT 5 s. Look at the monitor.', set: { bp: '64/30' }, q: 'Fluid-refractory cold shock. Which vasoactive?', opts: [
           { t: 'Epinephrine infusion', ok: true },
           { t: 'Milrinone infusion', why: 'Milrinone is an inodilator: it lowers the blood pressure further in an infant who is already hypotensive. Start epinephrine (or norepinephrine).' },
           { t: 'Another 20 mL/kg bolus', why: 'He has had 60 mL/kg and is still hypotensive and cold: the shock is fluid-refractory. Start a vasoactive infusion now; IV or IO is fine until there is a central line.' }
@@ -849,7 +849,7 @@ window.PALS = (() => {
         { k: 'Volume', say: 'Compensated hypovolemic shock.', need: ['ivio', 'fluid'], ok: ['o2', 'glucose'], msg: '20 mL/kg of normal saline running.', after: { hr: 150, bp: '92/58', look: 'Sleepy \u00b7 dry lips \u00b7 cool hands \u00b7 CRT 3 s' }, teach: 'Isotonic crystalloid (NS or LR) 20 mL/kg over 5\u201310 min; reassess after each bolus and repeat as needed.', t: 18 },
         { k: 'Sugar', say: 'Bolus done. Still sleepy.', need: ['glucose'], ok: ['fluid'], why: { dextrose: 'Check first, then treat.' }, msg: 'Glucose 52 mg/dL.', t: 12 },
         { k: 'Treat', say: 'Glucose 52 mg/dL.', need: ['dextrose'], ok: ['fluid'], msg: 'Dextrose in. She wakes up and asks for juice.', after: { hr: 132, bp: '96/60', look: 'Awake \u00b7 CRT 2 s', skin: 'pink' }, teach: 'Hypoglycemia is 60 mg/dL or less: give dextrose 0.5\u20131 g/kg (D10W 5\u201310 mL/kg), then recheck.', t: 14 },
-        { type: 'q', k: 'Endpoint', say: 'Looking better.', q: 'Which urine output shows adequate perfusion for her?', opts: [
+        { type: 'q', ex: true, k: 'Endpoint', say: 'Looking better.', q: 'Which urine output shows adequate perfusion for her?', opts: [
           { t: '1 mL/kg per hour or more', ok: true },
           { t: '0.5 mL/kg per hour or more', why: '0.5 mL/kg/h is the adolescent and adult target. In infants and young children aim for 1 mL/kg/h or more.' },
           { t: '2 mL/kg per day or more', why: 'That is per day, not per hour: under 0.1 mL/kg/h, close to anuria. Target 1 mL/kg/h or more.' }
@@ -872,7 +872,7 @@ window.PALS = (() => {
           { t: 'Obstructive shock', why: 'Breath sounds are equal and the trachea is midline. Bilateral crackles and a gallop point to a weak heart muscle.' }
         ], teach: 'Cardiogenic vs hypovolemic: both breathe fast, but cardiogenic shock has a much higher work of breathing (grunting, flaring), crackles, a big liver and distended neck veins.' },
         { k: 'Careful volume', say: 'Cardiogenic shock. She has vomited all day and barely drunk, so she may also be low on volume: a cautious fluid trial is reasonable.', need: ['ivio', 'fluid'], dose: { fluid: 'fluidCard' }, ok: ['glucose', 'vaso'], msg: 'A small bolus runs slowly while you watch her lungs and liver.', after: { bp: '84/64', look: 'Grunting \u00b7 crackles unchanged' }, teach: 'Cardiogenic shock: if fluid is needed, 5\u201310 mL/kg over 10\u201320 minutes, then reassess. Never the standard fast 20 mL/kg.', t: 20 },
-        { type: 'q', k: 'Reassess', say: 'After the small bolus: crackles unchanged, liver the same, still cool and grey.', q: 'Next step?', opts: [
+        { type: 'q', ex: true, k: 'Reassess', say: 'After the small bolus: crackles unchanged, liver the same, still cool and grey.', q: 'Next step?', opts: [
           { t: 'Stop fluids; start an inotrope; call cardiology/PICU', ok: true },
           { t: 'Push another 20 mL/kg NS bolus, then recheck the BP', why: 'No response to the small bolus and persistent crackles mean the heart cannot handle more volume; more fluid worsens pulmonary edema. Support contractility instead.' },
           { t: 'Give adenosine 0.1 mg/kg rapid IV push for the tachycardia', why: 'This is sinus tachycardia (P waves, variable rate) compensating for a weak heart. Do not slow it down; support contractility.' }
@@ -899,12 +899,12 @@ window.PALS = (() => {
           { t: 'No shock', why: 'Tachycardia, cool hands and slow CRT mean shock even with a normal blood pressure.' }
         ], teach: 'DKA causes hypovolemia from osmotic diuresis and vomiting.' },
         { k: 'Fluid', say: 'Compensated shock from DKA.', need: ['ivio', 'fluid'], ok: ['o2'], why: { dextrose: '!Her glucose is already over 500.', vaso: 'Volume first: this is fluid loss.' }, msg: 'Isotonic bolus running, then you reassess.', after: { hr: 124, look: 'Drowsy \u00b7 CRT 2 s' }, teach: 'DKA with shock: isotonic fluid 10\u201320 mL/kg, then reassess. Replace the rest of the deficit slowly, over 24\u201348 hours.', t: 18 },
-        { type: 'q', k: 'Insulin', say: 'The bolus is in and her perfusion is better.', q: 'How should insulin be started?', opts: [
+        { type: 'q', ex: true, k: 'Insulin', say: 'The bolus is in and her perfusion is better.', q: 'How should insulin be started?', opts: [
           { t: 'An infusion of 0.05\u20130.1 unit/kg/h after fluids, with no bolus', ok: true },
           { t: 'An IV bolus of 0.1 unit/kg, followed by the same infusion', why: 'An insulin bolus drops glucose and osmolality too fast and raises the risk of cerebral edema. Start the infusion without a bolus.' },
           { t: 'Subcutaneous insulin every 4 hours instead of an infusion', why: 'In DKA with shock, absorption from under the skin is unreliable. Use a low-dose IV infusion.' }
         ], teach: 'DKA insulin: IV infusion 0.05\u20130.1 unit/kg/h, no bolus, started after the first hour of fluids.' },
-        { type: 'q', k: 'Headache', say: 'Four hours later she complains of a bad headache and becomes confused. Look at the monitor.', set: { rhythm: 'sbrady', hr: 58, bp: '136/88', look: 'Headache \u00b7 confused' }, q: 'What do you suspect?', opts: [
+        { type: 'q', ex: true, k: 'Headache', say: 'Four hours later she complains of a bad headache and becomes confused. Look at the monitor.', set: { rhythm: 'sbrady', hr: 58, bp: '136/88', look: 'Headache \u00b7 confused' }, q: 'What do you suspect?', opts: [
           { t: 'Cerebral edema: mannitol or hypertonic saline now', ok: true },
           { t: 'Fluid overload: give furosemide and restrict fluids', why: 'Headache and confusion with a falling heart rate and rising blood pressure (the Cushing response) mean cerebral edema. Treat it with hyperosmolar therapy now.' },
           { t: 'Hypoglycemia from insulin: give a dextrose bolus', why: 'Check the glucose, but a headache with a slowing heart rate and rising blood pressure means cerebral edema. Treat it now.' }
@@ -926,7 +926,7 @@ window.PALS = (() => {
           { t: 'Obstructive shock', why: 'Breath sounds are equal, neck veins are flat and the bruise is on the belly. This is blood loss.' }
         ], teach: 'A handlebar injury can tear the spleen, liver or bowel. Hypotension means a large blood loss.' },
         { k: 'Volume', say: 'Hypotensive hemorrhagic shock.', need: ['fluid'], ok: ['o2'], why: { vaso: '!Vasopressors do not replace lost blood.', epi: 'He has a pulse. Volume is the treatment.' }, msg: 'Warm isotonic crystalloid running.', after: { hr: 152, bp: '82/50' }, teach: 'Hemorrhagic shock: one 20 mL/kg isotonic crystalloid bolus, then reassess, and give blood early.', t: 14 },
-        { type: 'q', k: 'Still shocked', say: 'After the bolus he is still pale and cool. Look at the monitor.', q: 'Next?', opts: [
+        { type: 'q', ex: true, k: 'Still shocked', say: 'After the bolus he is still pale and cool. Look at the monitor.', q: 'Next?', opts: [
           { t: 'Packed red cells 10 mL/kg and call the surgeon', ok: true },
           { t: 'Two more 20 mL/kg crystalloid boluses first', why: 'He has not responded to crystalloid. Give blood early: more crystalloid dilutes his clotting factors and red cells.' },
           { t: 'Start an epinephrine infusion for the pressure', why: 'Vasopressors do not replace lost blood. Give blood and get the bleeding stopped.' }
@@ -943,7 +943,7 @@ window.PALS = (() => {
         { k: 'Airway', say: 'Snoring, slow breaths.', need: ['position'], ok: ['suction', 'o2'], why: { bvm: 'Open the airway first, then ventilate.', naloxone: 'Good thought, but airway and breathing come first. Open the airway.' }, msg: 'The snoring stops.', teach: 'Head-tilt chin-lift (jaw thrust if trauma). Suction secretions.', t: 10 },
         { k: 'Breathing', say: 'Airway open. Breathing slowly and shallowly, lips blue.', need: ['bvm'], ok: ['o2', 'pads'], why: { o2: 'Oxygen alone is not enough at a rate of 6. She needs assisted ventilation.', naloxone: 'Naloxone comes next, but she is hypoxic now. Ventilate first: bagging works at once, naloxone takes minutes.' }, msg: 'Bag-mask ventilation, 1 breath every 2\u20133 s. The chest rises with each breath.', after: { spo2: 94 }, teach: 'Ineffective breathing with a pulse: ventilate, 1 breath every 2\u20133 seconds.', t: 12 },
         { k: 'Antidote', say: 'Bagging continues. A CNS cause of respiratory failure.', need: ['naloxone'], ok: ['pads', 'ivio', 'glucose'], msg: 'Naloxone given.', after: { rr: 22, look: 'Waking \u00b7 crying', skin: 'pink', spo2: 97 }, teach: 'Naloxone 0.1 mg/kg if under 5 y or 20 kg or less, max 2 mg; 2 mg if older or heavier. IV, IO, IM or IN.', t: 14 },
-        { type: 'q', k: 'Disposition', say: 'She wakes up crying and breathing on her own.', q: 'Plan?', opts: [
+        { type: 'q', ex: true, k: 'Disposition', say: 'She wakes up crying and breathing on her own.', q: 'Plan?', opts: [
           { t: 'Keep her on the monitor', ok: true },
           { t: 'Discharge home', why: 'Naloxone is short-acting and oxycodone can outlast it, so breathing can slow again. Keep her monitored and re-dose naloxone if needed.' }
         ], teach: 'Respiratory failure from a CNS cause (overdose, head injury): support breathing, give antidotes.' },
@@ -986,7 +986,7 @@ window.PALS = (() => {
           { t: 'Stable: she is sleeping off the exhaustion of the attack', why: 'Drowsiness in a child who was working hard to breathe, with SpO2 86%, means respiratory failure is near.' }
         ], teach: 'Respiratory failure signs: falling level of consciousness, a falling RR or effort, poor air movement, cyanosis.' },
         { k: 'Escalate', say: 'Respiratory failure is close. Get access and give the next drug.', need: ['ivio', 'mag'], ok: ['pads', 'albuterol', 'epiim', 'bvm'], why: { airway: 'Give the drugs first and call the most experienced airway provider. Intubation in asthma is a last resort.' }, msg: 'Magnesium sulfate running.', after: { spo2: 92, rr: 30, skin: 'pale', look: 'More alert \u00b7 wheeze louder again (air is moving)' }, teach: 'Refractory asthma: magnesium sulfate 20\u201350 mg/kg IV over 10\u201320 min (max 2 g). Subcutaneous epinephrine is another option.', t: 20 },
-        { type: 'q', k: 'If she tires', say: 'She improves, but the team plans for the worst.', q: 'If she needs bag-mask ventilation, how do you bag an asthmatic?', opts: [
+        { type: 'q', ex: true, k: 'If she tires', say: 'She improves, but the team plans for the worst.', q: 'If she needs bag-mask ventilation, how do you bag an asthmatic?', opts: [
           { t: 'Slow rate, small breaths, long time to exhale', ok: true },
           { t: 'Fast rate, small breaths to wash out the CO2', why: 'Fast bagging traps air, drops the BP and can cause a pneumothorax. Use a slow rate and give time to exhale.' },
           { t: 'Slow rate, large breaths to open tight airways', why: 'Big breaths overinflate trapped lungs. Give just enough to see the chest rise, and allow full exhalation.' }
@@ -1013,7 +1013,7 @@ window.PALS = (() => {
         { k: 'Oxygen', say: 'Respiratory distress with hypoxemia.', need: ['o2'], ok: ['pads', 'position', 'suction'], why: { bvm: 'She is breathing effectively. Start with oxygen.', airway: 'Not now. She is in distress, not failure.', albuterol: 'No wheeze. Albuterol treats bronchospasm.' }, msg: 'High-flow oxygen on.', after: { spo2: 92 }, teach: 'Respiratory distress: position of comfort, oxygen, monitor SpO2, suction secretions if needed.', t: 12 },
         { k: 'Treat the cause', say: 'Still grunting on oxygen. Febrile and dry.', need: ['ivio', 'abx'], ok: ['pads', 'glucose', 'fluid'], why: { dexa: 'Steroids are for croup, asthma and anaphylaxis, not pneumonia.', nebepi: 'Nebulized epinephrine is for upper airway swelling.' }, msg: 'IV in. Antibiotics running.', teach: 'Bacterial pneumonia: antibiotics. Common causes: Streptococcus pneumoniae, Mycoplasma, Haemophilus influenzae, Chlamydia.', t: 18 },
         { k: 'Tiring', say: 'An hour later she is limp and quiet, breathing slowly and shallowly, and blue despite high-flow oxygen.', set: { spo2: 82, rr: 14, hr: 180, skin: 'cyan', look: 'Limp \u00b7 barely responds \u00b7 shallow breaths' }, need: ['bvm'], ok: ['position', 'suction', 'pads'], why: { o2: 'Oxygen is already on and she is still hypoxic with slow, shallow breaths. She needs assisted ventilation.', airway: 'Bag-mask first. It buys time while the team prepares to intubate.' }, msg: 'Bag-mask ventilation, 1 breath every 2\u20133 s. The chest rises with each breath.', after: { spo2: 94, hr: 150, skin: 'pale' }, teach: 'Respiratory failure: assist with a bag-mask, 1 breath every 2\u20133 seconds (20\u201330/min), then consider an advanced airway.', t: 12 },
-        { type: 'q', k: 'Confirm the tube', say: 'She needs ongoing ventilation. The team prepares to intubate.', q: 'How do you confirm the tube is in the trachea?', opts: [
+        { type: 'q', ex: true, k: 'Confirm the tube', say: 'She needs ongoing ventilation. The team prepares to intubate.', q: 'How do you confirm the tube is in the trachea?', opts: [
           { t: 'Waveform EtCO2 plus chest rise and breath sounds', ok: true },
           { t: 'Tube misting plus chest rise and breath sounds', why: 'Misting and clinical signs can mislead, including in esophageal intubation. Confirm with waveform capnography plus clinical signs.' },
           { t: 'Rising SpO2 plus a chest X-ray to confirm position', why: 'SpO2 can stay up for minutes after an esophageal intubation, and an X-ray shows depth but is too slow. Waveform capnography confirms placement now.' }
@@ -1037,7 +1037,7 @@ window.PALS = (() => {
         { k: 'C', say: 'Fast pulse, CRT 3 s, cool hands.', need: ['pads', 'ivio'], ok: ['fluid'], msg: 'Monitor on, IV in.', teach: 'C: heart rate, rhythm, pulses, CRT, blood pressure, and access.', t: 14 },
         { k: 'D', say: 'Disability: responds only to pain. Pupils equal and reactive.', need: ['glucose'], ok: ['fluid'], why: { dextrose: 'Check first, then treat.' }, msg: 'Glucose 32 mg/dL.', teach: 'D: AVPU, pupils, and always the glucose.', t: 12 },
         { k: 'Treat', say: 'Glucose 32 mg/dL.', need: ['dextrose'], ok: ['fluid'], msg: 'Dextrose in. She opens her eyes and cries.', after: { hr: 128, skin: 'pink', look: 'Awake \u00b7 crying' }, teach: 'Hypoglycemia: dextrose 0.5\u20131 g/kg (D10W 5\u201310 mL/kg), then recheck.', t: 14 },
-        { type: 'q', k: 'Recheck', say: 'She is awake and asking for her mother.', q: 'What next?', opts: [
+        { type: 'q', ex: true, k: 'Recheck', say: 'She is awake and asking for her mother.', q: 'What next?', opts: [
           { t: 'Recheck glucose in 15 minutes; start a dextrose infusion', ok: true },
           { t: 'Discharge once she has finished a cup of juice', why: 'She has not eaten for a day and may drop again. Start a dextrose infusion and recheck.' },
           { t: 'Give a second dextrose bolus now to prevent a relapse', why: 'Recheck before giving more. Prevent relapse with a continuous dextrose infusion.' }
@@ -1059,7 +1059,7 @@ window.PALS = (() => {
           { t: 'Spinal shock from an injury to the neck', why: 'Spinal shock gives a low blood pressure. Here it is high, with a slow pulse, irregular breathing and a blown pupil: raised intracranial pressure.' },
           { t: 'Vagal bradycardia: treat it with atropine', why: 'A slow pulse with high blood pressure and irregular breathing is the Cushing response to raised intracranial pressure. Atropine does not treat it.' }
         ], teach: 'Cushing triad: slow heart rate, high blood pressure, irregular breathing. With a dilating pupil, brain herniation is imminent.' },
-        { type: 'q', k: 'Act', say: 'Signs of impending herniation.', q: 'What do you do right now?', opts: [
+        { type: 'q', ex: true, k: 'Act', say: 'Signs of impending herniation.', q: 'What do you do right now?', opts: [
           { t: 'Head up 30\u00b0, hypertonic saline or mannitol, call neurosurgery', ok: true },
           { t: 'Atropine for the slow pulse, then wait for the CT scan', why: 'The slow pulse is a response to raised pressure in the skull. Lower the intracranial pressure and call neurosurgery now.' },
           { t: 'Furosemide and fluid restriction, then wait for the CT', why: 'Hypotension and dehydration worsen brain injury. Use hyperosmolar therapy and get neurosurgery now.' }
@@ -1121,7 +1121,7 @@ window.PALS = (() => {
         ], teach: 'Compromise = hypotension, acutely altered mental status, or signs of shock.' },
         { k: 'Cardiovert', say: 'Unstable VT with a pulse.', need: ['sync'], ok: ['ivio'], why: { shock: '!She has a pulse: synchronize the shock.', adenosine: 'She is unstable: do not delay cardioversion for a drug.', amio: 'She is unstable: electricity first.', procain: 'She is unstable: electricity first.' }, msg: 'Synchronized shock\u2026 sinus tachycardia at 130.', after: { rhythm: 'stach', hr: 130, bp: '88/54', look: 'Drowsy \u00b7 CRT 3 s' }, teach: 'Synchronized cardioversion 0.5\u20131 J/kg, then 2 J/kg. Sedate first only if it causes no delay.', t: 16 },
         { k: 'Access, story, bloods', say: 'Sinus rhythm for now. Get access, the story and bloods.', need: ['ivio', 'history', 'labs'], ok: ['ecg12', 'glucose'], why: { fluid: 'Find out why first: a failing heart does not tolerate a large bolus.' }, msg: 'IV in. A week of fever and muscle aches, breathless on the stairs since yesterday, no medicines or drugs. Troponin very high, K 4.1, lactate 4.8.', teach: 'A viral illness, then chest pain, breathlessness and a ventricular arrhythmia: think myocarditis.', t: 20 },
-        { type: 'q', k: 'Circulation', say: 'BP 88/54, CRT 3 s. Her liver edge is 3 cm down and there are crackles at both bases.', q: 'How do you support her circulation?', opts: [
+        { type: 'q', ex: true, k: 'Circulation', say: 'BP 88/54, CRT 3 s. Her liver edge is 3 cm down and there are crackles at both bases.', q: 'How do you support her circulation?', opts: [
           { t: 'A small bolus of 5\u201310 mL/kg slowly, then reassess; early inotrope', ok: true },
           { t: 'Boluses of 20 mL/kg pushed fast, up to three', why: 'A big liver and crackles mean a failing pump. Large fast boluses will flood her lungs.' },
           { t: 'Nothing for now', why: 'She is still poorly perfused, and the heart muscle is inflamed. She needs careful support and a cardiology and PICU team.' }

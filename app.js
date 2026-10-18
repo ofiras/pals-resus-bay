@@ -184,7 +184,20 @@ function hidesText(i, field) {
   const e = p._e;
   return !!(e && typeof e[field] === 'string' && RX_RE.test(e[field]));
 }
-const sayOf = (p, i) => !hidesText(i, 'say') ? p.say : (p.type || 'act') === 'cycle' ? t('cycGeneric') : (S.st.monitor ? t('lookMon') : t('lookPt'));
+/* Expert: the step text keeps what you see and hear, without the instructions ("pause for a rhythm check", "what does this
+   cycle add?"). Sentences are judged on the English text and dropped at the same positions in the translation. */
+const IMP_RE = /^(Pause|Check|Give|Start|Get|Secure|Ask|Put|Attach|Resume|Find|Treat|Call|Shock|Defibrillate|Bag|Open|Examine|Reassess|Send|Hunt|Push|Look|Use|Decide|Choose|Stop|Clear|Prepare|Confirm|Insert|Place|Ventilate|Keep|Begin|Analyze|Charge|Recheck|Measure|Turn|Continue|Draw|Apply|Remove|Suction|Swap|Switch|Now|Next|Time to|Think|Work out|Protect|Support|Hands off)\b/i;
+/* sentences that name the diagnosis or hint at the next move, which the learner should work out alone */
+const DX_RE = /^(Time for|Rhythm check\.$|Before any|Septic shock|Compensated|Hypotensive|Cardiogenic shock|Respiratory failure is|Hyperosmolar therapy|Cardiology on the phone|Stable SVT|Unstable)|is reasonable|agrees:/i;
+const sents = x => String(x || '').match(/(?:[^.!?\u2026]|\.(?=\d))+[.!?\u2026]*\s*/g) || [];
+function exSay(p) {
+  const e = p._e && p._e.say, gen = S.st.monitor ? t('lookMon') : t('lookPt');
+  if (!e) return p.say;
+  const es = sents(e), ls = sents(p.say), drop = es.map(x => IMP_RE.test(x.trim()) || DX_RE.test(x.trim()) || /\?\s*$/.test(x));
+  if (!drop.some(Boolean)) return p.say;
+  return es.length === ls.length ? (ls.filter((_, k) => !drop[k]).join('').trim() || gen) : gen;
+}
+const sayOf = (p, i) => !hidesText(i, 'say') ? (S.lv >= 3 && (p.type || 'act') === 'act' ? exSay(p) : p.say) : (p.type || 'act') === 'cycle' ? t('cycGeneric') : (S.st.monitor ? t('lookMon') : t('lookPt'));
 const msgOf = (p, i) => hidesText(i, 'msg') ? t('msgDone') : (p.msg || t('done'));
 /* Typed doses (Expert): target value or [low, high] range, and the unit asked for. */
 const ANS = {
@@ -1519,11 +1532,11 @@ function wtAnswer(x, m, btn) {
 function nextPhase() {
   if (!S) return;
   S.i++;
-  /* Expert: no multiple-choice questions inside a case; the learner shows the decision by acting. A question whose answer
+  /* Expert: no multiple-choice questions for decisions the learner can show by acting (knowledge questions marked ex stay). A question whose answer
      is "start compressions" becomes a step that needs CPR; the others pass silently, with their scripted changes applied. */
   if (S.lv >= 3) {
     const q = S.c.phases[S.i];
-    if (q && q.type === 'q' && !q.tw) {
+    if (q && q.type === 'q' && !q.tw && !q.ex && !(q._e && q._e.ex)) {
       if (q.after && q.after.cpr === true) S.c.phases[S.i] = Object.assign({}, q, { type: 'act', need: ['cpr'], opts: undefined, q: undefined, t: 12 });
       else { S.worsening = true; if (q.set) applySt(q.set); if (q.after) applySt(q.after); S.worsening = false; nextPhase(); return; }
     }

@@ -113,7 +113,7 @@ window.PALS_GEN = (() => {
       phases.push({ k: G.a.rcK(nChecks + 1), hs: true, say: G.a.roscSay(rh), set: { cpr: false, rhythm: rh > (pt.y < 1 ? 180 : pt.kind === 'teen' ? 100 : 140) ? 'stach' : 'nsr', hr: rh, etco2: 36 }, need: ['check'], why: { cpr: W.organizedPulse, shock: W.organizedNoShock, rhythm: W.organizedPulse }, msg: G.a.roscMsg, after: { pulse: true, alarm: false, bp: bpStr(sbpLow(pt.y) - 6, 32), spo2: 93, skin: 'pale', look: G.a.roscLook }, teach: G.a.roscTeach, t: 10 });
       const posts = G.a.post.slice(), chosen = [];
       while (chosen.length < 1 && posts.length) chosen.push(posts.splice(Math.floor(R() * posts.length), 1)[0]);
-      chosen.forEach(pq => phases.push({ type: 'q', k: G.a.postK, say: pq.say, q: pq.q, opts: pq.opts, teach: pq.teach }));
+      chosen.forEach(pq => phases.push({ type: 'q', ex: true, k: G.a.postK, say: pq.say, q: pq.q, opts: pq.opts, teach: pq.teach }));
       phases.push({ type: 'end', say: G.a.endSay });
       return {
         id: 'gen-arrest', gen: 'arrest', title: G.title.arrest, group: G.group, algo: 'arrest', age: pt.label, ageY: pt.y, wt: pt.wt, kind: pt.kind, diff: 3,
