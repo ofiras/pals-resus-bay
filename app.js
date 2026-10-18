@@ -1519,6 +1519,15 @@ function wtAnswer(x, m, btn) {
 function nextPhase() {
   if (!S) return;
   S.i++;
+  /* Expert: no multiple-choice questions inside a case; the learner shows the decision by acting. A question whose answer
+     is "start compressions" becomes a step that needs CPR; the others pass silently, with their scripted changes applied. */
+  if (S.lv >= 3) {
+    const q = S.c.phases[S.i];
+    if (q && q.type === 'q' && !q.tw) {
+      if (q.after && q.after.cpr === true) S.c.phases[S.i] = Object.assign({}, q, { type: 'act', need: ['cpr'], opts: undefined, q: undefined, t: 12 });
+      else { S.worsening = true; if (q.set) applySt(q.set); if (q.after) applySt(q.after); S.worsening = false; nextPhase(); return; }
+    }
+  }
   const p = S.c.phases[S.i];
   if (!p) { finish(); return; }
   stallReset();
@@ -2770,6 +2779,8 @@ function finish() {
   if (!S || S.finished) return;
   S.finished = true; S.busy = true;
   hit('cd-' + (S.c.gen ? 'gen-' + S.c.gen : S.c.id)); if (S.died) hit('died');
+  /* a hospital case run start to finish without ever attaching the monitor: a small penalty, and it shows in the debrief */
+  if (!S.c.field && !S.flags.pads && !S.flags.leads && !S.died) { S.score -= 30; S.weak.add('approach'); S.errs.push({ k: t('noMonK'), msg: t('noMonM'), what: t('noMonW'), need: actName('leads') }); }
   const c = S.c, pct = S.died ? 0 : S.max ? Math.max(0, Math.min(1, S.score / S.max)) : 1;
   const dangers = S.errs.filter(e => e.danger).length;
   let stars = pct >= 0.9 ? 3 : pct >= 0.7 ? 2 : pct >= 0.4 ? 1 : 0;
